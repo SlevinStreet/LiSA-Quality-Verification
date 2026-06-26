@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - LiSA Verification Platform</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Load Chart.js from secure CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar and Header injected by navigation.js -->
+    
+    <main class="main-content">
+      <div class="content-body">
+        
+        <!-- Welcome Header -->
+        <div class="analytics-card-header" style="border-bottom:none; margin-bottom: 24px; padding-bottom:0;">
+          <div>
+            <h2 style="font-size: 28px; font-weight: 800;">Operational Control Center</h2>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:2px;">National compliance ledger overview and real-time QR verification diagnostics.</p>
+          </div>
+          <div style="display:flex; gap:12px;">
+            <button class="btn-icon-labeled" onclick="window.location.href='create-qcv.html'">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>Register QCV</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+          <!-- Total -->
+          <div class="metric-card total">
+            <div class="metric-header">
+              <span class="metric-title">Total Registered QCV</span>
+              <div class="metric-icon-box">
+                <svg><use href="#icon-registry"></use></svg>
+              </div>
+            </div>
+            <div class="metric-value" id="stat-total">0</div>
+            <div class="metric-trend up">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <polyline points="18 15 12 9 6 15"></polyline>
+              </svg>
+              <span>+12.4% this month</span>
+            </div>
+          </div>
+
+          <!-- Valid / Verified -->
+          <div class="metric-card valid">
+            <div class="metric-header">
+              <span class="metric-title">Active & Verified</span>
+              <div class="metric-icon-box" style="background-color:rgba(16, 185, 129, 0.1);">
+                <svg style="stroke:var(--status-valid-text);"><use href="#icon-security"></use></svg>
+              </div>
+            </div>
+            <div class="metric-value" id="stat-valid" style="color:var(--status-valid-text);">0</div>
+            <div class="metric-trend up">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <polyline points="18 15 12 9 6 15"></polyline>
+              </svg>
+              <span>95.2% high compliance</span>
+            </div>
+          </div>
+
+          <!-- Revoked -->
+          <div class="metric-card revoked">
+            <div class="metric-header">
+              <span class="metric-title">Revoked Certificates</span>
+              <div class="metric-icon-box" style="background-color:rgba(239, 68, 68, 0.1);">
+                <svg style="stroke:var(--status-revoked-text);" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/>
+                </svg>
+              </div>
+            </div>
+            <div class="metric-value" id="stat-revoked" style="color:var(--status-revoked-text);">0</div>
+            <div class="metric-trend down">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span>Hazard actions flagged</span>
+            </div>
+          </div>
+
+          <!-- Expired -->
+          <div class="metric-card expired">
+            <div class="metric-header">
+              <span class="metric-title">Expired Clearances</span>
+              <div class="metric-icon-box" style="background-color:rgba(75, 85, 99, 0.1);">
+                <svg style="stroke:var(--text-expired);" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="metric-value" id="stat-expired" style="color:var(--text-expired);">0</div>
+            <div class="metric-trend neutral">
+              <span>Standard interval cycles</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="analytics-grid">
+          <!-- Main Chart -->
+          <div class="analytics-card">
+            <div class="analytics-card-header">
+              <h3>Certificate Issuance & Compliance Timeline</h3>
+              <p style="font-size:12px; color:var(--text-muted); font-weight:500;">Clearances registered per month (2026)</p>
+            </div>
+            <div class="chart-container">
+              <canvas id="issuanceTrendChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Distribution Chart -->
+          <div class="analytics-card">
+            <div class="analytics-card-header">
+              <h3>Ledger Distribution</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="statusDoughnutChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ledger & Activity Row -->
+        <div class="analytics-grid" style="grid-template-columns: 1fr 1fr;">
+          <!-- Recent Certificates -->
+          <div class="ledger-card" style="box-shadow:var(--shadow-sm);">
+            <div class="ledger-header" style="border-bottom: 1px solid var(--lisa-border); padding: 16px 24px;">
+              <h3 style="font-size:16px; font-weight:700;">Recent Ledger Additions</h3>
+            </div>
+            <div class="table-wrapper">
+              <table class="lisa-table">
+                <thead>
+                  <tr>
+                    <th>QCV ID</th>
+                    <th>Manufacturer</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-certs-tbody">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Activity Audit Stream -->
+          <div class="analytics-card">
+            <div class="analytics-card-header" style="padding-bottom: 12px; margin-bottom:16px;">
+              <h3>Administrative Activity Stream</h3>
+            </div>
+            <div class="activity-list" id="dashboard-activity-feed">
+              <!-- Dynamic feed items -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- State and Navigation scripts -->
+  <script src="state.js"></script>
+  <script src="navigation.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      // 1. Gather stats from InsForge database asynchronously with synchronous local fallback
+      let certs = [];
+      let systemLogs = [];
+      try {
+        certs = await window.lisaState.getCertificatesAsync();
+        systemLogs = await window.lisaState.getSystemLogsAsync();
+      } catch (e) {
+        console.warn("Async fetch failed, using local storage cache:", e);
+        certs = window.lisaState.getCertificates();
+        systemLogs = window.lisaState.getSystemLogs();
+      }
+
+      const total = certs.length;
+      const valid = certs.filter(c => c.status === "VALID").length;
+      const revoked = certs.filter(c => c.status === "REVOKED").length;
+      const expired = certs.filter(c => c.status === "EXPIRED").length;
+
+      document.getElementById("stat-total").innerText = total;
+      document.getElementById("stat-valid").innerText = valid;
+      document.getElementById("stat-revoked").innerText = revoked;
+      document.getElementById("stat-expired").innerText = expired;
+
+      // 2. Populate Recent Ledger additions table (limit 4)
+      const tbody = document.getElementById("recent-certs-tbody");
+      tbody.innerHTML = ""; // Clear existing rows
+      certs.slice(0, 4).forEach(c => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><span class="mono-id">${c.id}</span></td>
+          <td style="font-weight:500;">${c.manufacturer}</td>
+          <td><span class="status-badge ${c.status.toLowerCase()}">${c.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // 3. Populate Activity Feed
+      const feed = document.getElementById("dashboard-activity-feed");
+      feed.innerHTML = ""; // Clear existing log items
+      systemLogs.slice(0, 5).forEach(log => {
+        const item = document.createElement("div");
+        item.className = "activity-item";
+        
+        let dotColor = "gold";
+        if (log.action.includes("CREATION")) dotColor = "green";
+        if (log.action.includes("REVOCATION")) dotColor = "red";
+
+        const localTime = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        item.innerHTML = `
+          <div class="activity-dot ${dotColor}"></div>
+          <div class="activity-content">
+            <div class="activity-text"><strong>${log.user.split('@')[0]}</strong> performed <code>${log.action}</code>: ${log.details}</div>
+            <div class="activity-time">${localTime} | Block hash: <span style="font-family:var(--font-mono); font-size:10px;">${log.blockHash.substring(0,8)}...</span></div>
+          </div>
+        `;
+        feed.appendChild(item);
+      });
+
+      // 4. Initialize Line Chart using Chart.js
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthlyCounts = new Array(12).fill(0);
+      const currentYear = new Date().getFullYear();
+      
+      certs.forEach(c => {
+        if (c.issueDate) {
+          const date = new Date(c.issueDate);
+          if (!isNaN(date.getTime()) && date.getFullYear() === currentYear) {
+            monthlyCounts[date.getMonth()]++;
+          }
+        }
+      });
+      
+      const currentMonthIndex = new Date().getMonth();
+      const displayLabels = months.slice(0, currentMonthIndex + 1);
+      const displayData = monthlyCounts.slice(0, currentMonthIndex + 1);
+
+      const lineCtx = document.getElementById('issuanceTrendChart').getContext('2d');
+      new Chart(lineCtx, {
+        type: 'line',
+        data: {
+          labels: displayLabels,
+          datasets: [{
+            label: 'Issued Quality Certificates',
+            data: displayData,
+            borderColor: '#0D3F26',
+            backgroundColor: 'rgba(13, 63, 38, 0.05)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#C5A85A',
+            pointBorderColor: '#0D3F26',
+            pointRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              grid: { color: '#E6EAE8' },
+              ticks: { color: '#6B7280', font: { family: 'Inter' } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#6B7280', font: { family: 'Inter' } }
+            }
+          }
+        }
+      });
+
+      // 5. Initialize Doughnut Chart
+      const doughnutCtx = document.getElementById('statusDoughnutChart').getContext('2d');
+      new Chart(doughnutCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Active & Verified', 'Expired Clearances', 'Revoked Flags'],
+          datasets: [{
+            data: [valid, expired, revoked],
+            backgroundColor: ['#059669', '#6B7280', '#DC2626'],
+            borderWidth: 2,
+            borderColor: '#FFFFFF'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#1F2937',
+                font: { family: 'Inter', size: 12, weight: 600 }
+              }
+            }
+          },
+          cutout: '70%'
+        }
+      });
+
+    });
+  </script>
+</body>
+</html>

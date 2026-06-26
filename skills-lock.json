@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "insforge": {
+      "source": "insforge/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/insforge/SKILL.md",
+      "computedHash": "f7f1eeb0ca10cccf96273f062c925c43c70ed6676528f6671f1e6993f7b428eb"
+    },
+    "insforge-cli": {
+      "source": "insforge/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/insforge-cli/SKILL.md",
+      "computedHash": "5249a6c94457cd63d4355572d8e0bb74d72395249e04bc0d4e8de7b0976cf5ad"
+    },
+    "insforge-debug": {
+      "source": "insforge/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/insforge-debug/SKILL.md",
+      "computedHash": "6cf3b1c731c605810a35459c7a9a59a7968b4dbd8e7e12dadd6cc7c4666feda8"
+    },
+    "insforge-integrations": {
+      "source": "insforge/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/insforge-integrations/SKILL.md",
+      "computedHash": "38e44406ade4e25a8e46bdf5a38259c088d5c474676bf0868dab835290bed1e4"
+    }
+  }
+}

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Public Compliance Gate Portal - LiSA Digital Verification</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Public verify custom layout styling overrides */
+    body {
+      background-color: var(--lisa-gray-bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .verify-navbar {
+      height: 70px;
+      background-color: var(--lisa-green);
+      color: var(--lisa-white);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      border-bottom: 2px solid var(--lisa-gold);
+      box-shadow: var(--shadow-md);
+    }
+
+    .verify-navbar button {
+      transition: all 0.2s ease;
+    }
+
+    .verify-navbar button:hover {
+      background-color: var(--lisa-gold) !important;
+      color: var(--lisa-green) !important;
+    }
+
+    .verify-navbar button:hover svg {
+      stroke: var(--lisa-green) !important;
+    }
+
+    .verify-navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .verify-navbar-brand svg {
+      width: 32px;
+      height: 32px;
+      fill: var(--lisa-gold);
+    }
+
+    .verify-navbar-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--lisa-gold);
+    }
+
+    .verify-badge-container {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 16px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .verify-main-area {
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .verify-split-card {
+      background-color: var(--lisa-white);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--lisa-border);
+      width: 100%;
+      max-width: 960px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+    }
+
+    @media (max-width: 860px) {
+      .verify-split-card {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .verify-footer {
+      background-color: var(--lisa-green-hover);
+      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      padding: 20px;
+      font-size: 11.5px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Top official secure navigation header -->
+  <nav class="verify-navbar">
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <!-- Back button ->
+      <button onclick="goBackToApp()" style="background: none; border: 1.5px solid var(--lisa-gold); color: var(--lisa-gold); padding: 6px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="stroke: var(--lisa-gold); width: 14px; height: 14px; fill: none;">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span>Return to Platform</span>
+      </button-->
+
+      <div class="verify-navbar-brand">
+        <img src="logo.jpg" alt="Liberia Standards Authority" style="height: 48px; width: auto; border-radius: 6px;">
+      </div>
+    </div>
+
+    <div class="verify-badge-container">
+      <svg width="14" height="14" fill="none" stroke="var(--lisa-gold)" stroke-width="2.5" viewBox="0 0 24 24">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      <span style="color:var(--lisa-gold);">Secure SSL verified gate</span>
+    </div>
+  </nav>
+
+  <!-- Main Split columns view -->
+  <main class="verify-main-area">
+    <div class="verify-split-card" id="error-fallback-card"
+      style="display:none; padding:40px; text-align:center; grid-template-columns: 1fr;">
+      <h2 style="color:var(--status-revoked-text); font-size:22px; font-weight:800;">Verification Registry Record Not
+        Found</h2>
+      <p style="color:var(--text-muted); font-size:14px; margin-top:8px;">The requested certificate index could not be
+        located in the national quality standards ledger database.</p>
+      <button class="btn-primary" style="margin:20px auto 0 auto;" onclick="window.location.href='index.html'">Portal
+        Gateway Login</button>
+    </div>
+
+    <div class="verify-split-card" id="public-portal-split-view">
+
+      <!-- LEFT COLUMN: Status and dynamic QR badges -->
+      <section class="verify-left-panel">
+
+        <div class="verify-title-section">
+          <img src="logo.jpg" alt="LiSA Logo" style="height: 48px; width: auto; border-radius: 6px; background: white; padding: 2px;">
+          <div
+            style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8; font-weight:700; color:var(--lisa-gold);">
+            Compliance Status</div>
+        </div>
+
+        <!-- Large dynamic QR image -->
+        <div
+          style="background:#fff; border-radius:8px; padding:10px; margin-bottom: 12px; display:inline-block; border:1px solid rgba(255,255,255,0.15);">
+          <img id="verify-qr-img" style="width: 150px; height: 150px; object-fit:contain;" src=""
+            alt="Registry dynamic QR">
+        </div>
+
+        <!-- Dynamic large status badge -->
+        <div class="verify-status-badge-lg valid" id="verify-status-pill">VALID</div>
+
+        <!-- Legal Statement Box -->
+        <div class="verify-legal-statement" id="verify-legal-statement-box">
+          This certificate is officially REGISTERED and ACTIVE within the Liberia Standards Authority registry.
+        </div>
+
+        <!-- Verification ID -->
+        <div class="verify-mono-block" id="verify-verification-id">VER-QCV-89102-LR</div>
+
+        <!-- Timestamp box -->
+        <div style="text-align:center; font-size:11px; color:rgba(255,255,255,0.7); margin-bottom: 24px;">
+          <strong>Scan Audit Timestamp</strong>
+          <div style="margin-top:2px;" id="verify-timestamp-val">2026-05-28 04:45</div>
+        </div>
+
+        <!-- Security notice -->
+        <div class="verify-sec-notice">
+          <strong>Institutional Warning:</strong> This gateway is connected to the immutable LSA ledger index. Any
+          tampered fields invalidate standard quality stamps. Report fraud to LSA.
+        </div>
+
+      </section>
+
+      <!-- RIGHT COLUMN: Standards details, Issue dates, rotate Gold seal -->
+      <section class="verify-right-panel">
+
+        <!-- SECTION 1: Product Specifications -->
+        <div class="verify-grid-section">
+          <h3 class="verify-section-title">Product details metadata</h3>
+
+          <div class="verify-data-grid">
+            <div class="verify-data-item">
+              <span class="verify-data-label">Manufacturer / Corporation</span>
+              <span class="verify-data-value" id="verify-manufacturer">Liberia Cement Corp</span>
+            </div>
+
+            <div class="verify-data-item">
+              <span class="verify-data-label">Product Clearance</span>
+              <span class="verify-data-value" id="verify-product">Portland Cement Grade 42.5N</span>
+            </div>
+
+            <div class="verify-data-item">
+              <span class="verify-data-label">Country of Origin</span>
+              <span class="verify-data-value" id="verify-origin">Monrovia, Liberia</span>
+            </div>
+
+            <div class="verify-data-item">
+              <span class="verify-data-label">Covered Batch Serials</span>
+              <span class="verify-data-value" id="verify-serials" style="font-size:12.5px;">CEM-MON-2026-90184</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: Compliance Mandates -->
+        <div class="verify-grid-section">
+          <h3 class="verify-section-title">Compliance & Standards</h3>
+
+          <div class="verify-data-grid">
+            <div class="verify-data-item">
+              <span class="verify-data-label">Applicable Codes</span>
+              <span class="verify-data-value" id="verify-standards" style="font-size:12.5px;">LSA-ASTM C150
+                Specification</span>
+            </div>
+
+            <div class="verify-data-item">
+              <span class="verify-data-label">Regulatory Mandates</span>
+              <span class="verify-data-value" id="verify-regulations" style="font-size:12.5px;">Standards Authority Act
+                Section 14</span>
+            </div>
+
+            <div class="verify-data-item">
+              <span class="verify-data-label">Surveillance Scheme</span>
+              <span class="verify-data-value" id="verify-scheme">Product Certification Type 5</span>
+            </div>
+
+            <div class="verify-data-item">
+              <span class="verify-data-label">Surveillance Interval</span>
+              <span class="verify-data-value" id="verify-interval">Every 6 Months</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: Issuance Timeline & Official Seal -->
+        <div class="verify-grid-section">
+          <h3 class="verify-section-title">Certificate Credentials</h3>
+
+          <div class="verify-data-grid">
+            <div class="verify-data-item">
+              <span class="verify-data-label">Clearance Issuance</span>
+              <span class="verify-data-value" id="verify-issue">2026-02-10</span>
+            </div>
+
+            <div class="verify-data-item">
+              <span class="verify-data-label">Registry Clearance Expiry</span>
+              <span class="verify-data-value" id="verify-expiry">2027-02-10</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Official seal approval & Block hash block -->
+        <div
+          style="background-color: var(--lisa-gold-light); border:1.5px solid var(--lisa-gold); border-radius:12px; padding:20px; display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap; margin-top:12px;">
+          <div style="flex-grow:1; max-width:65%;">
+            <h4 style="font-size:14px; font-weight:800; text-transform:uppercase; color:var(--lisa-green);">Official
+              clearance endorsement</h4>
+            <p style="font-size:12.5px; line-height:1.4; color:var(--lisa-green); font-style:italic; margin-top:4px;"
+              id="verify-declaration-text">
+              "This product clearance is officially endorsed under compliance schemes certified by the Liberia Standards
+              Authority."
+            </p>
+            <div
+              style="font-family:var(--font-mono); font-size:11px; margin-top:8px; color:var(--lisa-green); word-break:break-all;"
+              id="verify-blockchain-hash">
+              <strong>Block hash:</strong> 8e3c7db10fa889218dfa89102cb4812aef90d8fa09e3e9d8fa09c87d6aef8193
+            </div>
+          </div>
+
+          <!-- Rotating Vector Seal -->
+          <div style="display:flex; justify-content:center;">
+            <svg class="gold-seal-vector" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="46" stroke="var(--lisa-gold)" stroke-width="2.5" fill="none"
+                stroke-dasharray="3,3" />
+              <circle cx="50" cy="50" r="42" stroke="var(--lisa-gold)" stroke-width="1.5" fill="none" />
+              <circle cx="50" cy="50" r="34" stroke="var(--lisa-gold)" stroke-width="2.5" fill="none" />
+
+              <!-- Stars inside rings -->
+              <polygon points="50,22 52,27 57,27 53,30 55,35 50,32 45,35 47,30 43,27 48,27" />
+              <polygon points="50,78 52,73 57,73 53,70 55,65 50,68 45,65 47,70 43,73 48,73" />
+
+              <!-- LSA Center Emblem Mockup -->
+              <text x="50" y="47" font-size="6" font-family="'Outfit', sans-serif" font-weight="900"
+                fill="var(--lisa-gold)" text-anchor="middle">OFFICIAL</text>
+              <text x="50" y="55" font-size="8" font-family="'Outfit', sans-serif" font-weight="900"
+                fill="var(--lisa-gold)" text-anchor="middle">LiSA</text>
+              <text x="50" y="62" font-size="5" font-family="'Outfit', sans-serif" font-weight="700"
+                fill="var(--lisa-gold)" text-anchor="middle">VERIFIED</text>
+
+              <!-- Circular border indicators -->
+              <path d="M 22 50 A 28 28 0 0 1 78 50" fill="none" id="sealTextPathTop" />
+              <path d="M 78 50 A 28 28 0 0 1 22 50" fill="none" id="sealTextPathBottom" />
+            </svg>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="verify-footer">
+    <div style="font-weight:700; color:var(--lisa-gold); font-size:12px;">LIBERIA STANDARDS AUTHORITY (LiSA)</div>
+    <div style="margin-top:4px; font-size:10.5px;">&copy; 2026 Government of Liberia Digital Verification
+      Infrastructure. All Rights Reserved.</div>
+  </footer>
+
+  <!-- State and Verification Scripts -->
+  <script src="state.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Gather verification ID from URL query parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const docId = urlParams.get('id');
+
+      if (!docId) {
+        // Render fallback search view
+        document.getElementById("public-portal-split-view").style.display = "none";
+        document.getElementById("error-fallback-card").style.display = "block";
+        return;
+      }
+
+      await window.lisaState.getCertificatesAsync();
+
+      // Check state for matching certificate
+      const cert = window.lisaState.getCertificateById(docId);
+      if (!cert) {
+        document.getElementById("public-portal-split-view").style.display = "none";
+        document.getElementById("error-fallback-card").style.display = "block";
+        return;
+      }
+
+      // Record the verification scan
+      await window.lisaState.addVerificationScanAsync(cert.id);
+
+      // Dynamic QR Generator matching verification gate link URL
+      const baseDir = window.location.href.split('/').slice(0, -1).join('/');
+      const currentGateUrl = baseDir + '/verify.html?id=' + cert.verificationId;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(currentGateUrl)}`;
+      document.getElementById("verify-qr-img").src = qrUrl;
+
+      // Dynamic Header and Left status blocks setup
+      const pill = document.getElementById("verify-status-pill");
+      pill.className = `verify-status-badge-lg ${cert.status.toLowerCase()}`;
+      pill.innerText = cert.status;
+
+      const statement = document.getElementById("verify-legal-statement-box");
+      if (cert.status === 'VALID') {
+        statement.className = "verify-legal-statement";
+        statement.innerHTML = `This digital clearance certificate is officially <strong>REGISTERED</strong> and <strong>ACTIVE</strong> within the Liberia Standards Authority compliance ledger.`;
+      } else if (cert.status === 'REVOKED') {
+        statement.className = "verify-legal-statement revoked";
+        statement.innerHTML = `
+          <div class="verify-security-warning">
+            <strong>OFFICIAL REVOCATION NOTICE:</strong> This clearance has been officially flagged and revoked by LSA registrars effective ${cert.revocationDate}. Immediate enforcement protocol activated.
+          </div>
+          <div style="margin-top:12px; font-size:13px; color:rgba(255,255,255,0.9);">
+            <strong>Reason for Revocation:</strong> ${cert.revocationReason}
+          </div>
+        `;
+      } else if (cert.status === 'EXPIRED') {
+        statement.className = "verify-legal-statement";
+        statement.style.borderColor = "#9CA3AF";
+        statement.style.backgroundColor = "rgba(156, 163, 175, 0.1)";
+        statement.innerHTML = `<strong>CLEARANCE EXPIRED:</strong> The validity interval for this standards clearance has passed (${cert.expiryDate}). Product requires surveillance audit renewal.`;
+      }
+
+      document.getElementById("verify-verification-id").innerText = cert.verificationId;
+
+      // Audit scan timestamp (rendered in client timezone)
+      const now = new Date();
+      const dateStr = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0') + ' ' +
+        String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0');
+      document.getElementById("verify-timestamp-val").innerText = dateStr;
+
+      // Populate Right columns data fields
+      document.getElementById("verify-manufacturer").innerText = cert.manufacturer;
+      document.getElementById("verify-product").innerText = cert.productName;
+      document.getElementById("verify-origin").innerText = cert.origin;
+      document.getElementById("verify-serials").innerText = cert.serialNumbers;
+
+      document.getElementById("verify-standards").innerText = cert.applicableStandards;
+      document.getElementById("verify-regulations").innerText = cert.regulations;
+      document.getElementById("verify-scheme").innerText = cert.scheme;
+      document.getElementById("verify-interval").innerText = cert.surveillanceInterval;
+
+      document.getElementById("verify-issue").innerText = cert.issueDate;
+      document.getElementById("verify-expiry").innerText = cert.expiryDate || 'Continuous Surveillance Clearance';
+
+      document.getElementById("verify-declaration-text").innerText =
+        `"This product clearance is officially endorsed under standards compliance scheme verified and signed by ${cert.signatory}."`;
+
+      document.getElementById("verify-blockchain-hash").innerHTML =
+        `<strong>Cryptographic Ledger Hash:</strong> <span style="color:var(--lisa-gold);">${cert.hash}</span>`;
+    });
+
+    function goBackToApp() {
+      // If we navigated from within the app, go back to the exact page we came from
+      if (document.referrer && document.referrer.includes(window.location.host)) {
+        window.history.back();
+      } else {
+        // Fallback to registry page
+        window.location.href = "registry.html";
+      }
+    }
+  </script>
+</body>
+
+</html>

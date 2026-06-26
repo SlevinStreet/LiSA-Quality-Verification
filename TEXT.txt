@@ -1,0 +1,28 @@
+PROBLEM TO FIX
+
+APPLY THIS TO ALL FORM FIELDS:
+1. Inline Field-Specific (most recommended).
+   Directly below a specific input field (e.g Username or password).
+   Best practice: Real-time validation as the user typws or on blur.
+     Examples:
+      "Email is required"
+      "Password must be at least 8 characters"
+      "Invalid email format"
+2. Top of the Form (Global Error Banner)
+   Above all form fields, often in a red banner or alert box.
+   Used for form-level or authentication errors (e.g., wrong credentials, account locked, server issues).
+      Common messages:
+        "Incorrect username or password"
+        "Too many failed attempts. Try aagain later."
+        "Network error. Please try again."
+   Combined Approach (Most Common)
+     1. Banner for credential errors + inllne for validation.
+
+DASHBOARD PAGE:
+1.  Remove the logout button from the top navigation bar and place it to the bottom of the side bar.
+
+QR MANAGEMENT PAGE:
+1. When i upload a new qr code, the qr code doesn't save on the frontend or backend.
+
+VERIFICATION LOG PAGE:
+1. When I scan the qr code, there was no record of it on the verifiction logs page or the backend.

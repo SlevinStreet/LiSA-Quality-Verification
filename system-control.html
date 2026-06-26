@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Control - LiSA Verification Platform</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Security styling details */
+    .permission-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .permission-table th, .permission-table td {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--lisa-border);
+    }
+    .permission-table th {
+      background-color: var(--lisa-green-hover);
+      color: var(--lisa-gold);
+      font-weight: 700;
+    }
+    .permission-table tbody tr:hover {
+      background-color: var(--lisa-gold-light);
+    }
+    .checkbox-sec {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--lisa-green);
+      cursor: pointer;
+    }
+    
+    .blockchain-ledger-card {
+      background-color: #111827; /* Dark charcoal */
+      border-radius: 12px;
+      border: 1px solid #374151;
+      padding: 20px;
+      color: #F3F4F6;
+      font-family: var(--font-sans);
+    }
+    
+    .ledger-logs-console {
+      max-height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-right: 8px;
+    }
+
+    .blockchain-log-node {
+      border: 1px solid #374151;
+      background-color: #1F2937;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    .blockchain-log-node::before {
+      content: 'LINKED BLOCK';
+      position: absolute;
+      right: 16px;
+      top: 16px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--lisa-gold);
+      border: 1px solid var(--lisa-gold);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
+    .blockchain-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      font-size: 11.5px;
+      color: #9CA3AF;
+      border-bottom: 1px dashed #374151;
+      padding-bottom: 8px;
+    }
+
+    .blockchain-hash-block {
+      font-family: var(--font-mono);
+      background-color: #111827;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #6EE7B7; /* Green tint */
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar and Topbar injected by navigation.js -->
+    
+    <main class="main-content">
+      <div class="content-body" style="margin-top: 24px;">
+        
+        <!-- Welcome Header -->
+        <div class="analytics-card-header" style="border-bottom:none; margin-bottom: 8px; padding-bottom:0;">
+          <div>
+            <h2 style="font-size: 26px; font-weight: 800;">Security Control Center</h2>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:2px;">Manage inspector authorization profiles, role permissions, and cryptographic ledger ledgers.</p>
+          </div>
+        </div>
+
+        <!-- Matrix & Profiles row -->
+        <div class="analytics-grid">
+          <!-- Permission Matrix -->
+          <div class="ledger-card">
+            <div class="analytics-card-header">
+              <h3>Role Authorization Matrix</h3>
+              <p style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Control system access controls based on designated roles.</p>
+            </div>
+            
+            <div class="table-wrapper">
+              <table class="permission-table">
+                <thead>
+                  <tr>
+                    <th>Role</th>
+                    <th style="text-align: center;">Read</th>
+                    <th style="text-align: center;">Upload</th>
+                    <th style="text-align: center;">Revoke</th>
+                    <th style="text-align: center;">Edit</th>
+                    <th style="text-align: center;">System Setup</th>
+                  </tr>
+                </thead>
+                <tbody id="permissions-tbody">
+                  <!-- Injected by JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <div style="padding: 20px; display: flex; justify-content: flex-end;">
+              <button class="btn-primary" onclick="saveSystemPermissions()">Publish Policy Matrix</button>
+            </div>
+          </div>
+
+          <!-- Add inspector profile -->
+          <div class="ledger-card" style="padding: 20px;">
+            <div class="analytics-card-header" style="padding:0; border:none; margin-bottom:16px;">
+              <h3>Authorized Inspector Accounts</h3>
+            </div>
+            
+            <form id="add-user-form" style="display: flex; flex-direction: column; gap: 12px;" onsubmit="addNewUser(event)">
+              <div class="form-group">
+                <label class="form-label" for="new-user-email">Official Agency Email</label>
+                <input type="email" id="new-user-email" class="form-input" placeholder="inspector@lisa.gov.lr" required>
+                <p id="email-error" style="display:none; color:#f43f5e; font-size:0.85rem; margin-top:4px; margin-bottom:0;"></p>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="new-user-password">Initial Password</label>
+                <input type="password" id="new-user-password" class="form-input" placeholder="Min. 8 characters" minlength="8" required>
+                <p id="password-error" style="display:none; color:#f43f5e; font-size:0.85rem; margin-top:4px; margin-bottom:0;"></p>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="new-user-role">System Assigned Role</label>
+                <select id="new-user-role" class="form-select">
+                  <option value="supervisor">Field Supervisor</option>
+                  <option value="admin">Platform Admin</option>
+                  <option value="developer">Security Auditor</option>
+                </select>
+              </div>
+
+              <p id="add-user-error" style="display:none; color:#f43f5e; font-size:0.88rem; margin:0;"></p>
+              <button type="submit" class="btn-gold" style="width: 100%;" id="btn-create-inspector">Create Inspector Profile</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Ledger Blockchain Logs -->
+        <div class="blockchain-ledger-card">
+          <div style="margin-bottom: 20px; border-bottom:1px solid #374151; padding-bottom:12px;">
+            <h3 style="color:#C5A85A; font-size:18px; font-weight:700;">Immutable System Action Ledger</h3>
+            <p style="color:#9CA3AF; font-size:12.5px; margin-top:2px;">Auditable activity ledger secured by cryptographic hash chains.</p>
+          </div>
+
+          <div class="ledger-logs-console" id="audit-ledgers-container">
+            <!-- Dynamically populated logs -->
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- State, Navigation, and Control scripts -->
+  <script src="state.js"></script>
+  <script src="navigation.js"></script>
+  <script>
+    let currentPermissions = {};
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadControlPanelData();
+      renderPermissionsMatrix();
+      renderSystemAuditLedger();
+    });
+
+    async function loadControlPanelData() {
+      currentPermissions = await window.lisaState.getPermissionsAsync();
+    }
+
+    function renderPermissionsMatrix() {
+      const tbody = document.getElementById("permissions-tbody");
+      tbody.innerHTML = "";
+
+      const roles = ['admin', 'supervisor', 'developer'];
+      const roleLabels = {
+        admin: 'Platform Administrator',
+        supervisor: 'Field Standards Auditor',
+        developer: 'System Security Developer'
+      };
+
+      roles.forEach(r => {
+        const perms = currentPermissions[r];
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td style="font-weight: 700; color: var(--lisa-green);">${roleLabels[r]}</td>
+          <td style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="read" ${perms.read ? 'checked' : ''}></td>
+          <td style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="upload" ${perms.upload ? 'checked' : ''}></td>
+          <td style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="revoke" ${perms.revoke ? 'checked' : ''}></td>
+          <td style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="edit" ${perms.edit ? 'checked' : ''}></td>
+          <td style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="system" ${perms.system ? 'checked' : ''}></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function saveSystemPermissions() {
+      const updated = {
+        admin: {},
+        supervisor: {},
+        developer: {}
+      };
+
+      document.querySelectorAll(".checkbox-sec").forEach(chk => {
+        const role = chk.getAttribute("data-role");
+        const perm = chk.getAttribute("data-perm");
+        updated[role][perm] = chk.checked;
+      });
+
+      await window.lisaState.savePermissionsAsync(updated);
+      alert("System security privilege changes committed and propagated to inspector routes.");
+      await loadControlPanelData();
+      renderPermissionsMatrix();
+      renderSystemAuditLedger();
+    }
+
+    async function addNewUser(e) {
+      e.preventDefault();
+      const email = document.getElementById("new-user-email").value.trim();
+      const password = document.getElementById("new-user-password").value;
+      const role = document.getElementById("new-user-role").value;
+      
+      const emailErrorEl = document.getElementById("email-error");
+      const passwordErrorEl = document.getElementById("password-error");
+      const genericErrorEl = document.getElementById("add-user-error");
+      const btn = document.getElementById("btn-create-inspector");
+
+      emailErrorEl.style.display = "none";
+      passwordErrorEl.style.display = "none";
+      genericErrorEl.style.display = "none";
+      
+      btn.disabled = true;
+      btn.textContent = "Creating account...";
+
+      try {
+        // Register user in InsForge auth backend (handle_new_user trigger creates public.users row)
+        await window.lisaState.signUpInspectorAsync(email, password, role);
+
+        // Log the inspector creation in system logs
+        const session = window.lisaState.getCurrentSession();
+        const adminUser = session ? session.email : "super-admin@lisa.gov.lr";
+        await window.lisaState.addSystemLogAsync(adminUser, "INSPECTOR_PROFILE_CREATION", `Authorized email ${email} under ${role.toUpperCase()} credentials.`);
+
+        alert(`✅ Inspector account created for ${email} with role: ${role.toUpperCase()}.\nThey can now log in using the provided credentials.`);
+        document.getElementById("add-user-form").reset();
+        renderSystemAuditLedger();
+      } catch (err) {
+        const msg = err?.message?.toLowerCase() || "";
+        if (msg.includes("password")) {
+          passwordErrorEl.textContent = "Password too weak or short.";
+          passwordErrorEl.style.display = "block";
+        } else if (msg.includes("email") || msg.includes("already registered")) {
+          emailErrorEl.textContent = "Email already in use or invalid.";
+          emailErrorEl.style.display = "block";
+        } else {
+          genericErrorEl.textContent = "Action failed. Try again.";
+          genericErrorEl.style.display = "block";
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Create Inspector Profile";
+      }
+    }
+
+    async function renderSystemAuditLedger() {
+      const container = document.getElementById("audit-ledgers-container");
+      container.innerHTML = "";
+
+      const logs = await window.lisaState.getSystemLogsAsync();
+
+      logs.forEach(log => {
+        const item = document.createElement("div");
+        item.className = "blockchain-log-node";
+
+        const date = new Date(log.timestamp);
+        const timeStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+        item.innerHTML = `
+          <div class="blockchain-meta-grid">
+            <div><strong>INDEX LOG:</strong> ${log.id}</div>
+            <div><strong>AUTHORIZED USER:</strong> ${log.user}</div>
+            <div><strong>TIMESTAMP:</strong> ${timeStr}</div>
+          </div>
+          
+          <div style="font-size:13.5px; line-height:1.4; color:#F9FAFB; margin: 4px 0;">
+            <strong style="color:var(--lisa-gold);">${log.action}:</strong> ${log.details}
+          </div>
+
+          <div class="blockchain-hash-block">
+            <span style="color:#9CA3AF; font-family:sans-serif; font-size:10px; font-weight:700; display:block; margin-bottom:2px;">LEDGER BLOCK SHA-256 SIGNATURE</span>
+            ${log.blockHash}
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+  </script>
+</body>
+</html>

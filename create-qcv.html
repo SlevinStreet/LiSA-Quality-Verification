@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create QCV - LiSA Verification Platform</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Section step wrapper transitions */
+    .step-section {
+      display: none;
+    }
+
+    .step-section.active {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    /* Upload status container */
+    .upload-success-indicator {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid var(--status-valid-text);
+      background-color: var(--status-valid);
+      color: var(--status-valid-text);
+      border-radius: 8px;
+      font-size: 13.5px;
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    /* Submission Animation overlay specific details */
+    .overlay-logs-container {
+      width: 100%;
+      max-width: 480px;
+      background-color: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 20px 0;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .overlay-log-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0.4;
+      transition: opacity 0.3s;
+    }
+
+    .overlay-log-line.active {
+      opacity: 1;
+      color: var(--lisa-gold);
+    }
+
+    .overlay-log-line.done {
+      opacity: 1;
+      color: var(--status-valid-text);
+    }
+
+    .overlay-log-line.done svg {
+      stroke: var(--status-valid-text);
+    }
+
+    .spinner-gold {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(197, 168, 90, 0.2);
+      border-top-color: var(--lisa-gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .success-badge-card {
+      background-color: var(--lisa-white);
+      border-radius: 12px;
+      padding: 30px;
+      border: 1px solid var(--lisa-border);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+      animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes scaleUp {
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Form Validation Styles */
+    .alert-banner {
+      background-color: #fef2f2;
+      border: 1px solid #f87171;
+      color: #b91c1c;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .inline-error {
+      color: #ef4444;
+      font-size: 11.5px;
+      font-weight: 600;
+      margin-top: 4px;
+      display: none;
+    }
+    
+    .form-input.error, .form-select.error, .form-textarea.error {
+      border-color: #ef4444 !important;
+      background-color: #fef2f2 !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar and Topbar injected by navigation.js -->
+
+    <main class="main-content">
+      <div class="content-body" style="margin-top: 24px;">
+
+        <!-- Welcome Header -->
+        <div class="analytics-card-header" style="border-bottom:none; margin-bottom: 12px; padding-bottom:0;">
+          <div>
+            <h2 style="font-size: 26px; font-weight: 800;">Register Compliance Certificate</h2>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:2px;">Submit official quality standards
+              approvals into the digital ledger registry.</p>
+          </div>
+        </div>
+
+        <!-- Form Card Layout -->
+        <div class="analytics-card" style="padding: 24px 30px;">
+
+          <!-- Step Stepper Indicators -->
+          <div class="form-steps-container">
+            <div class="form-steps-line" id="stepper-line" style="width: 0%;"></div>
+
+            <div class="form-step-node active" id="step-node-1">1</div>
+            <div class="form-step-node" id="step-node-2">2</div>
+            <div class="form-step-node" id="step-node-3">3</div>
+            <div class="form-step-node" id="step-node-4">4</div>
+          </div>
+
+          <form id="qcv-creation-form" onsubmit="event.preventDefault();">
+
+            <div id="global-error-banner" class="alert-banner" style="display:none;">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <span id="global-error-text"></span>
+            </div>
+
+            <!-- SECTION 1: Certificate File Upload -->
+            <div class="step-section active" id="step-section-1">
+              <div class="analytics-card-header" style="border:none; padding:0; margin-bottom:12px;">
+                <h3>Step 1: Compliance File Audit</h3>
+              </div>
+              <p style="color: var(--text-muted); font-size: 13.5px; margin-bottom: 8px;">Upload the official source
+                manufacturer approval certificate (PDF or High-Res Image format).</p>
+
+              <!-- Drag area -->
+              <div class="uploader-area" id="drag-drop-area">
+                <svg class="uploader-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <div style="font-weight: 700; color: var(--lisa-green); font-size:15px;">Drag and drop quality
+                  certificate here</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Supports PDF, DOC, DOCX, PNG, JPG, or JPEG up to
+                  24MB</div>
+                <button type="button" class="btn-secondary" style="padding: 6px 12px; font-size:12.5px; margin-top:8px;"
+                  onclick="simulateSelectFile()">Select File from System</button>
+                <input type="file" id="file-uploader-input" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                  style="display: none;" onchange="handleFileSelected(event)">
+              </div>
+
+              <!-- Uploading progress -->
+              <div class="uploader-progress-wrapper" id="upload-progress-container" style="display: none;">
+                <div
+                  style="display: flex; justify-content: space-between; font-size:12px; margin-bottom:4px; font-weight:600;">
+                  <span id="upload-filename">certificate_compliance.pdf</span>
+                  <span id="upload-pct">0%</span>
+                </div>
+                <div class="uploader-progress-bar">
+                  <div class="uploader-progress-fill" id="upload-progress-fill"></div>
+                </div>
+              </div>
+
+              <!-- Success alert -->
+              <div class="upload-success-indicator" id="upload-success-box">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <div>
+                  <strong style="font-weight: 700;">Integrity Check Passed:</strong>
+                  File structure validated, cryptographic checksum <code
+                    style="font-family:var(--font-mono); font-size:11.5px; background:rgba(0,0,0,0.05); padding:2px 4px; border-radius:4px;"
+                    id="file-checksum">SHA256-4c8d...</code> generated.
+                </div>
+              </div>
+
+              <!-- Form Navigation buttons -->
+              <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+                <button type="button" class="btn-primary" id="btn-next-1" disabled onclick="transitionStep(2)">
+                  <span>Continue</span>
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- SECTION 2: PRODUCT INFORMATION -->
+            <div class="step-section" id="step-section-2">
+              <div class="analytics-card-header" style="border:none; padding:0; margin-bottom:12px;">
+                <h3>Step 2: PRODUCT INFORMATION</h3>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="qcv-cert-id">Certificate ID</label>
+                  <input type="text" id="qcv-cert-id" class="form-input" placeholder="Enter Certificate ID" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="qcv-manufacturer">Company / Manufacturer</label>
+                  <input type="text" id="qcv-manufacturer" class="form-input"
+                    placeholder="Enter Company / Manufacturer" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="qcv-product">Product Name</label>
+                  <input type="text" id="qcv-product" class="form-input" placeholder="Enter Product Name"
+                    required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="qcv-product-type">Product Type</label>
+                  <input type="text" id="qcv-product-type" class="form-input" placeholder="Enter Product Type"
+                    required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="qcv-importer">Importer Name</label>
+                  <input type="text" id="qcv-importer" class="form-input" placeholder="Enter Importer Name"
+                    required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="qcv-category">Product Category</label>
+                  <input type="text" id="qcv-category" class="form-input" placeholder="Enter Product Category"
+                    required>
+                </div>
+
+                <div class="form-group full-width" style="grid-column: span 2;">
+                  <label class="form-label" style="font-weight: 700; color: var(--lisa-green);">HS Code</label>
+                  <div style="display: flex; gap: 16px;">
+                    <div style="flex: 1;">
+                      <label class="form-label" for="qcv-hs-code" style="font-size: 11px; text-transform: uppercase;">Code</label>
+                      <input type="text" id="qcv-hs-code" class="form-input" placeholder="Enter Code" required>
+                    </div>
+                    <div style="flex: 1;">
+                      <label class="form-label" for="qcv-hs-date" style="font-size: 11px; text-transform: uppercase;">Date of Entry</label>
+                      <input type="date" id="qcv-hs-date" class="form-input" required>
+                    </div>
+                    <div style="flex: 1;">
+                      <label class="form-label" for="qcv-hs-port" style="font-size: 11px; text-transform: uppercase;">Port of Entry</label>
+                      <input type="text" id="qcv-hs-port" class="form-input" placeholder="Enter Port of Entry" required>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="qcv-origin">Country of Origin</label>
+                  <input type="text" id="qcv-origin" class="form-input"
+                    placeholder="Enter Country of Origin" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="qcv-quantity">Quantity</label>
+                  <input type="text" id="qcv-quantity" class="form-input"
+                    placeholder="Enter Quantity" required>
+                </div>
+              </div>
+
+              <!-- Form Navigation -->
+              <div style="display: flex; justify-content: space-between; margin-top: 16px;">
+                <button type="button" class="btn-secondary" onclick="transitionStep(1)">Back</button>
+                <button type="button" class="btn-primary" onclick="validateStep2() ? transitionStep(3) : null">
+                  <span>Continue</span>
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- SECTION 3: COMPLIANCE INFORMATION -->
+            <div class="step-section" id="step-section-3">
+              <div class="analytics-card-header" style="border:none; padding:0; margin-bottom:12px;">
+                <h3>Step 3: COMPLIANCE INFORMATION</h3>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="qcv-standards">Applicable Standard</label>
+                  <input type="text" id="qcv-standards" class="form-input"
+                    placeholder="Enter Applicable Standard" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="qcv-scheme">Certification Scheme</label>
+                  <input type="text" id="qcv-scheme" class="form-input"
+                    placeholder="Enter Certification Scheme" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="qcv-issue-date">Issue Date</label>
+                  <input type="date" id="qcv-issue-date" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="qcv-expiry-date">Expiry Date</label>
+                  <input type="date" id="qcv-expiry-date" class="form-input" placeholder="Continuous">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="qcv-status">Certificate Status</label>
+                  <select id="qcv-status" class="form-select">
+                    <option value="VALID" selected>VALID</option>
+                    <option value="EXPIRED">EXPIRED</option>
+                    <option value="REVOKED">REVOKED</option>
+                  </select>
+                </div>
+
+                <div class="form-group full-width">
+                  <label class="form-label" for="qcv-scope">Scope of Certification</label>
+                  <textarea id="qcv-scope" class="form-textarea"
+                    placeholder="Describe scope of certification..."
+                    required></textarea>
+                </div>
+              </div>
+
+              <!-- Form Navigation -->
+              <div style="display: flex; justify-content: space-between; margin-top: 16px;">
+                <button type="button" class="btn-secondary" onclick="transitionStep(2)">Back</button>
+                <button type="button" class="btn-primary" onclick="validateStep3() ? transitionStep(4) : null">
+                  <span>Continue</span>
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- SECTION 4: Final Verification and Signatures -->
+            <div class="step-section" id="step-section-4">
+              <div class="analytics-card-header" style="border:none; padding:0; margin-bottom:12px;">
+                <h3>Step 4: Authorizations & Signatories</h3>
+              </div>
+              <p style="color:var(--text-muted); font-size:13.5px;">Please confirm the authorized Standards Director
+                verifying quality and ledger clearance.</p>
+
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label class="form-label" for="qcv-signatory">Authorized Signatory Director General</label>
+                  <select id="qcv-signatory" class="form-select">
+                    <option value="Mr. Weleefweh N. Williams, Director General, LiSA">Mr. Weleefweh N. Williams,
+                      Director General, LiSA</option>
+                    <option value="Joseph, Chief Quality Auditor, LiSA">Joseph, Chief Quality Auditor, LiSA</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Overview summary review block -->
+              <div
+                style="background-color: var(--lisa-gold-light); border: 1px solid var(--lisa-gold); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+                <h4 style="font-size: 14px; font-weight: 800; color: var(--lisa-green); text-transform: uppercase;">
+                  Declaration of ledger authenticity</h4>
+                <p style="font-size: 12.5px; line-height: 1.4; color: var(--lisa-green);">By submitting this clearance
+                  form, you verify that the attached documents are verified source records, matching Liberia Standards
+                  Authority national import and manufacture protocols. This clearance entry will receive an immutable
+                  block ledger index.</p>
+              </div>
+
+              <!-- Form Navigation -->
+              <div style="display: flex; justify-content: space-between; margin-top: 24px;">
+                <button type="button" class="btn-secondary" onclick="transitionStep(3)">Back</button>
+                <div style="display: flex; gap: 12px;">
+                  <!--button type="button" class="btn-secondary" onclick="saveDraft()">Save Draft</button-->
+                  <button type="button" class="btn-primary" onclick="submitCertificate()">Submit QCV Ledger</button>
+                </div>
+              </div>
+            </div>
+
+          </form>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Dynamic Cryptographic Overlay -->
+  <div class="progress-overlay" id="submission-overlay"
+    style="display: none; background-color: rgba(13, 63, 38, 0.96); flex-direction: column; text-align: center; justify-content: center; padding: 30px;">
+
+    <!-- Step 1: Submission progress steps -->
+    <div id="overlay-progress-stage"
+      style="display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%;">
+      <div
+        style="width: 60px; height: 60px; border: 4px solid rgba(197, 168, 90, 0.2); border-top-color: var(--lisa-gold); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px;">
+      </div>
+      <h2 style="color: var(--lisa-gold); font-size: 24px; font-weight: 800;">Cryptographic Ledger Registration</h2>
+      <p style="color: rgba(255,255,255,0.7); font-size: 14px; max-width:400px;">Anchoring quality verification
+        credentials to the secure national compliance registry.</p>
+
+      <!-- Stepper console logs -->
+      <div class="overlay-logs-container">
+        <div class="overlay-log-line" id="log-line-1">
+          <div class="spinner-gold" id="log-spinner-1"></div>
+          <svg class="done-icon" style="display: none;" width="16" height="16" fill="none" stroke="currentColor"
+            stroke-width="3" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>[1] Validating cryptographic source file hash integrity...</span>
+        </div>
+        <div class="overlay-log-line" id="log-line-2">
+          <div class="spinner-gold" id="log-spinner-2" style="display: none;"></div>
+          <svg class="done-icon" style="display: none;" width="16" height="16" fill="none" stroke="currentColor"
+            stroke-width="3" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>[2] Generating high-resolution routing path QR matrices...</span>
+        </div>
+        <div class="overlay-log-line" id="log-line-3">
+          <div class="spinner-gold" id="log-spinner-3" style="display: none;"></div>
+          <svg class="done-icon" style="display: none;" width="16" height="16" fill="none" stroke="currentColor"
+            stroke-width="3" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>[3] Committing metadata block block index indexes...</span>
+        </div>
+        <div class="overlay-log-line" id="log-line-4">
+          <div class="spinner-gold" id="log-spinner-4" style="display: none;"></div>
+          <svg class="done-icon" style="display: none;" width="16" height="16" fill="none" stroke="currentColor"
+            stroke-width="3" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>[4] Broadcasting status clearance credentials...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Final Success badge card -->
+    <div id="overlay-success-stage" style="display: none; align-items: center; justify-content: center; width: 100%;">
+      <div class="success-badge-card">
+        <img src="logo.jpg" alt="LiSA Logo" style="height: 60px; width: auto; border-radius: 8px;">
+
+        <div>
+          <h2 style="font-size: 20px; font-weight: 800; color: var(--lisa-green);">Clearance Registered Successfully
+          </h2>
+          <p style="color: var(--text-muted); font-size:13px; margin-top: 4px;">Certificate committed to compliance
+            ledger.</p>
+        </div>
+
+        <div
+          style="padding: 12px; border: 1px solid var(--lisa-border); border-radius: 8px; background-color: var(--lisa-gray-bg); display: flex; align-items: center; gap: 12px;">
+          <img id="success-qr-preview" style="width: 80px; height: 80px; object-fit: contain;" src="" alt="Live QR">
+          <div style="text-align: left;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+              Registry Index</div>
+            <div style="font-family: var(--font-mono); font-size: 12.5px; font-weight:700; color: var(--lisa-green);"
+              id="success-cert-id">QCV-2026-1004</div>
+            <div class="status-badge valid" style="margin-top: 4px; padding: 2px 8px; font-size:10px;">ACTIVE & VERIFIED
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; width: 100%;">
+          <button class="btn-secondary" style="flex: 1; padding: 8px 16px; font-size: 13px;"
+            onclick="window.location.href='registry.html'">Registry Ledger</button>
+          <button class="btn-primary" style="flex: 1; padding: 8px 16px; font-size: 13px;" id="success-verify-btn">View
+            Gate Portal</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- State, Navigation, and Creation Scripts -->
+  <script src="state.js"></script>
+  <script src="navigation.js"></script>
+  <script>
+    let isFileUploaded = false;
+    let mockFileHash = "";
+    let uploadedFileName = "";
+    let uploadedFileData = "";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Set today's date in step 3
+      const todayStr = new Date().toISOString().split("T")[0];
+      document.getElementById("qcv-issue-date").value = todayStr;
+
+      // Set up Drag & Drop uploader
+      const dragArea = document.getElementById("drag-drop-area");
+
+      dragArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dragArea.classList.add("dragover");
+      });
+
+      dragArea.addEventListener("dragleave", () => {
+        dragArea.classList.remove("dragover");
+      });
+
+      dragArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dragArea.classList.remove("dragover");
+
+        if (e.dataTransfer.files.length > 0) {
+          const file = e.dataTransfer.files[0];
+          simulateFileVerification(file);
+        }
+      });
+
+      setupFormValidation();
+    });
+
+    // Form Validation UI Helpers
+    function setupFormValidation() {
+      const formControls = document.querySelectorAll('.form-input, .form-select, .form-textarea');
+      formControls.forEach(control => {
+        if (!control.id) return;
+        const errorSpan = document.createElement('div');
+        errorSpan.className = 'inline-error';
+        errorSpan.id = 'error-' + control.id;
+        control.parentNode.appendChild(errorSpan);
+
+        control.addEventListener('input', () => {
+          clearFieldError(control.id);
+          hideGlobalError();
+        });
+        control.addEventListener('change', () => {
+          clearFieldError(control.id);
+          hideGlobalError();
+        });
+      });
+    }
+
+    function showFieldError(inputId, message) {
+      const control = document.getElementById(inputId);
+      const errorSpan = document.getElementById('error-' + inputId);
+      if (control && errorSpan) {
+        control.classList.add('error');
+        errorSpan.innerText = message;
+        errorSpan.style.display = 'block';
+      }
+    }
+
+    function clearFieldError(inputId) {
+      const control = document.getElementById(inputId);
+      const errorSpan = document.getElementById('error-' + inputId);
+      if (control && errorSpan) {
+        control.classList.remove('error');
+        errorSpan.innerText = '';
+        errorSpan.style.display = 'none';
+      }
+    }
+
+    function clearAllFieldErrors() {
+      const formControls = document.querySelectorAll('.form-input, .form-select, .form-textarea');
+      formControls.forEach(c => clearFieldError(c.id));
+    }
+
+    function showGlobalError(message) {
+      const banner = document.getElementById('global-error-banner');
+      const text = document.getElementById('global-error-text');
+      if (banner && text) {
+        text.innerText = message;
+        banner.style.display = 'flex';
+        banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function hideGlobalError() {
+      const banner = document.getElementById('global-error-banner');
+      if (banner) {
+        banner.style.display = 'none';
+      }
+    }
+
+    function simulateSelectFile() {
+      document.getElementById("file-uploader-input").click();
+    }
+
+    function handleFileSelected(event) {
+      if (event.target.files.length > 0) {
+        simulateFileVerification(event.target.files[0]);
+      }
+    }
+
+    function simulateFileVerification(file) {
+      const progressContainer = document.getElementById("upload-progress-container");
+      const progressFill = document.getElementById("upload-progress-fill");
+      const uploadPct = document.getElementById("upload-pct");
+      const uploadFilename = document.getElementById("upload-filename");
+      const successBox = document.getElementById("upload-success-box");
+      const nextBtn = document.getElementById("btn-next-1");
+
+      uploadFilename.innerText = file.name;
+      progressContainer.style.display = "block";
+      successBox.style.display = "none";
+      nextBtn.disabled = true;
+
+      // Read file content locally as a Base64 Data URL to allow future in-browser viewing
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        uploadedFileData = e.target.result;
+        uploadedFileName = file.name;
+      };
+      reader.readAsDataURL(file);
+
+      let pct = 0;
+      const interval = setInterval(() => {
+        pct += 10;
+        progressFill.style.width = pct + "%";
+        uploadPct.innerText = pct + "%";
+
+        if (pct >= 100) {
+          clearInterval(interval);
+          isFileUploaded = true;
+
+          // Generate mock checksum
+          mockFileHash = "SHA256-";
+          for (let i = 0; i < 16; i++) {
+            mockFileHash += Math.floor(Math.random() * 16).toString(16);
+          }
+
+          document.getElementById("file-checksum").innerText = mockFileHash.toUpperCase();
+          successBox.style.display = "flex";
+          nextBtn.disabled = false;
+        }
+      }, 100);
+    }
+
+    function transitionStep(stepNum) {
+      // Hide all step sections
+      document.querySelectorAll(".step-section").forEach(sec => sec.classList.remove("active"));
+      // Show chosen step
+      document.getElementById(`step-section-${stepNum}`).classList.add("active");
+
+      // Update Stepper Line & Stepper Nodes
+      const nodes = [1, 2, 3, 4];
+      nodes.forEach(nodeVal => {
+        const node = document.getElementById(`step-node-${nodeVal}`);
+        if (nodeVal < stepNum) {
+          node.className = "form-step-node completed";
+        } else if (nodeVal === stepNum) {
+          node.className = "form-step-node active";
+        } else {
+          node.className = "form-step-node";
+        }
+      });
+
+      const stepperLineWidths = ["0%", "33.33%", "66.66%", "100%"];
+      document.getElementById("stepper-line").style.width = stepperLineWidths[stepNum - 1];
+    }
+
+    // Step Validation
+    function validateStep2() {
+      clearAllFieldErrors();
+      hideGlobalError();
+      let isValid = true;
+
+      const fields = [
+        { id: 'qcv-cert-id', name: 'Certificate ID' },
+        { id: 'qcv-manufacturer', name: 'Company / Manufacturer' },
+        { id: 'qcv-product', name: 'Product Name' },
+        { id: 'qcv-product-type', name: 'Product Type' },
+        { id: 'qcv-importer', name: 'Importer Name' },
+        { id: 'qcv-category', name: 'Product Category' },
+        { id: 'qcv-hs-code', name: 'HS Code' },
+        { id: 'qcv-hs-date', name: 'Date of Entry' },
+        { id: 'qcv-hs-port', name: 'Port of Entry' },
+        { id: 'qcv-origin', name: 'Country of Origin' },
+        { id: 'qcv-quantity', name: 'Quantity' }
+      ];
+
+      let missingFields = 0;
+      fields.forEach(f => {
+        const val = document.getElementById(f.id).value.trim();
+        if (!val) {
+          showFieldError(f.id, `${f.name} is required`);
+          isValid = false;
+          missingFields++;
+        }
+      });
+
+      const certId = document.getElementById("qcv-cert-id").value.trim();
+      const certIdPattern = /^LiSA-QR-[A-Z0-9]{2}-\d{4}-\d{5}$/i;
+      if (certId && !certIdPattern.test(certId)) {
+        showFieldError("qcv-cert-id", "Format must be: LiSA-QR-XX-YYYY-XXXXX (e.g. LiSA-QR-AB-2026-12345)");
+        isValid = false;
+      }
+
+      if (!isValid) {
+        if (missingFields > 0) {
+          showGlobalError("Please complete all required fields before continuing.");
+        } else {
+          showGlobalError("Please fix the validation errors below.");
+        }
+      }
+
+      return isValid;
+    }
+
+    function validateStep3() {
+      clearAllFieldErrors();
+      hideGlobalError();
+      let isValid = true;
+
+      const fields = [
+        { id: 'qcv-standards', name: 'Applicable Standard' },
+        { id: 'qcv-scheme', name: 'Certification Scheme' },
+        { id: 'qcv-issue-date', name: 'Issue Date' },
+        { id: 'qcv-scope', name: 'Scope of Certification' }
+      ];
+
+      let missingFields = 0;
+      fields.forEach(f => {
+        const val = document.getElementById(f.id).value.trim();
+        if (!val) {
+          showFieldError(f.id, `${f.name} is required`);
+          isValid = false;
+          missingFields++;
+        }
+      });
+
+      if (!isValid) {
+        showGlobalError("Please complete all compliance information fields.");
+      }
+      return isValid;
+    }
+
+    // Saving Drafts logic
+    function saveDraft() {
+      const manufacturer = document.getElementById("qcv-manufacturer").value.trim() || "Draft Manufacturer";
+      const product = document.getElementById("qcv-product").value.trim() || "Draft Product";
+
+      alert(`Draft entry for ${manufacturer} (${product}) has been compiled and safely cached locally.`);
+      window.location.href = "registry.html";
+    }
+
+    // Form Submission with Animation Overlay
+    function submitCertificate() {
+      const importerName = document.getElementById("qcv-importer").value.trim();
+      const productType = document.getElementById("qcv-product-type").value.trim();
+      const category = document.getElementById("qcv-category").value.trim();
+      const hsCode = document.getElementById("qcv-hs-code").value.trim();
+      const hsDate = document.getElementById("qcv-hs-date").value;
+      const hsPort = document.getElementById("qcv-hs-port").value.trim();
+      const quantity = document.getElementById("qcv-quantity").value.trim();
+
+      const serialNumbers = `Importer: ${importerName} | Type: ${productType} | Category: ${category} | HS Code: ${hsCode} (${hsDate}, ${hsPort}) | Qty: ${quantity}`;
+
+      // Gather Data
+      const certData = {
+        id: document.getElementById("qcv-cert-id").value.trim(),
+        manufacturer: document.getElementById("qcv-manufacturer").value.trim(),
+        productName: document.getElementById("qcv-product").value.trim(),
+        origin: document.getElementById("qcv-origin").value.trim(),
+        serialNumbers: serialNumbers,
+        scope: document.getElementById("qcv-scope").value.trim(),
+        applicableStandards: document.getElementById("qcv-standards").value.trim(),
+        regulations: "LSA Standard Mandate",
+        scheme: document.getElementById("qcv-scheme").value.trim(),
+        surveillanceInterval: "Every 6 Months",
+        issueDate: document.getElementById("qcv-issue-date").value,
+        expiryDate: document.getElementById("qcv-expiry-date").value || "",
+        signatory: document.getElementById("qcv-signatory").value,
+        status: document.getElementById("qcv-status").value,
+        uploadedFileName: uploadedFileName,
+        uploadedFileData: uploadedFileData
+      };
+
+      // Show secure cryptographic overlay
+      const overlay = document.getElementById("submission-overlay");
+      overlay.style.display = "flex";
+
+      // Timeouts simulator
+      // Log line 1 (Validating integrity) -> starts active
+      document.getElementById("log-line-1").className = "overlay-log-line active";
+
+      setTimeout(() => {
+        document.getElementById("log-spinner-1").style.display = "none";
+        document.getElementById("log-line-1").querySelector(".done-icon").style.display = "block";
+        document.getElementById("log-line-1").className = "overlay-log-line done";
+
+        // Log line 2 (QR matrices generation)
+        document.getElementById("log-line-2").className = "overlay-log-line active";
+        document.getElementById("log-spinner-2").style.display = "block";
+
+        setTimeout(() => {
+          document.getElementById("log-spinner-2").style.display = "none";
+          document.getElementById("log-line-2").querySelector(".done-icon").style.display = "block";
+          document.getElementById("log-line-2").className = "overlay-log-line done";
+
+          // Log line 3 (ledger index indexes commit)
+          document.getElementById("log-line-3").className = "overlay-log-line active";
+          document.getElementById("log-spinner-3").style.display = "block";
+
+          setTimeout(() => {
+            document.getElementById("log-spinner-3").style.display = "none";
+            document.getElementById("log-line-3").querySelector(".done-icon").style.display = "block";
+            document.getElementById("log-line-3").className = "overlay-log-line done";
+
+            // Log line 4 (broadcasting status)
+            document.getElementById("log-line-4").className = "overlay-log-line active";
+            document.getElementById("log-spinner-4").style.display = "block";
+
+            setTimeout(async () => {
+              document.getElementById("log-spinner-4").style.display = "none";
+              document.getElementById("log-line-4").querySelector(".done-icon").style.display = "block";
+              document.getElementById("log-line-4").className = "overlay-log-line done";
+
+              // Committing to LSA State Singleton, with remote backend fallback
+              let newCert;
+              try {
+                newCert = await window.lisaState.createCertificateAsync(certData);
+                if (!newCert) {
+                  console.warn("Remote certificate creation returned null, falling back to local.");
+                  newCert = window.lisaState.createCertificate(certData);
+                }
+              } catch (error) {
+                console.warn("Remote certificate creation failed, falling back to local storage.", error);
+                newCert = window.lisaState.createCertificate(certData);
+              }
+
+
+              // Complete overall success rendering transition
+              setTimeout(() => {
+                // Switch overlay visual components
+                document.getElementById("overlay-progress-stage").style.display = "none";
+                document.getElementById("overlay-success-stage").style.display = "flex";
+
+                // Setup success details card
+                document.getElementById("success-cert-id").innerText = newCert.id;
+
+                const verifyUrl = window.location.origin + "/verify.html?id=" + newCert.verificationId;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(verifyUrl)}`;
+                document.getElementById("success-qr-preview").src = qrUrl;
+
+                document.getElementById("success-verify-btn").onclick = () => {
+                  window.location.href = `verify.html?id=${newCert.verificationId}`;
+                };
+
+              }, 400);
+
+            }, 500); // Step 4 duration
+
+          }, 800); // Step 3 duration
+
+        }, 800); // Step 2 duration
+
+      }, 800); // Step 1 duration
+    }
+  </script>
+</body>
+
+</html>

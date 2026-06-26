@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supervisor Dashboard - LiSA Verification Platform</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Scanner simulator container styles */
+    .scanner-box {
+      border: 2px dashed var(--lisa-gold);
+      background-color: var(--lisa-gold-light);
+      padding: 24px;
+      border-radius: 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .scanner-simulate-btn {
+      background-color: var(--lisa-green);
+      color: var(--lisa-white);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .scanner-simulate-btn:hover {
+      background-color: var(--lisa-green-hover);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar and Topbar injected by navigation.js -->
+    
+    <main class="main-content">
+      <div class="content-body" style="margin-top: 24px;">
+        
+        <!-- Welcome Header -->
+        <div class="analytics-card-header" style="border-bottom:none; margin-bottom: 8px; padding-bottom:0;">
+          <div>
+            <h2 style="font-size: 26px; font-weight: 800;">Field Inspector Hub</h2>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:2px;">Field standards auditing overview and digital QR clearance verification terminal.</p>
+          </div>
+          <div>
+            <div class="locked-indicator">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <span>Field Inspector Clearance</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metrics Row -->
+        <div class="metrics-grid">
+          <!-- Total -->
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Compliance Ledger Size</span>
+              <div class="metric-icon-box">
+                <svg><use href="#icon-registry"></use></svg>
+              </div>
+            </div>
+            <div class="metric-value" id="sup-stat-total">0</div>
+            <div class="metric-trend neutral">All records accessible</div>
+          </div>
+
+          <!-- Active -->
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Active & Verified Clearances</span>
+              <div class="metric-icon-box" style="background-color:rgba(16, 185, 129, 0.1);">
+                <svg style="stroke:var(--status-valid-text);"><use href="#icon-security"></use></svg>
+              </div>
+            </div>
+            <div class="metric-value" id="sup-stat-valid" style="color:var(--status-valid-text);">0</div>
+            <div class="metric-trend up">High compliance status</div>
+          </div>
+
+          <!-- Revoked -->
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Revoked Authority Flags</span>
+              <div class="metric-icon-box" style="background-color:rgba(239, 68, 68, 0.1);">
+                <svg style="stroke:var(--status-revoked-text);" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/>
+                </svg>
+              </div>
+            </div>
+            <div class="metric-value" id="sup-stat-revoked" style="color:var(--status-revoked-text);">0</div>
+            <div class="metric-trend down">Active hazards flagged</div>
+          </div>
+        </div>
+
+        <!-- Dashboard Split grid -->
+        <div class="analytics-grid">
+          <!-- Active search registry ledger -->
+          <div class="ledger-card">
+            <div class="analytics-card-header">
+              <h3>Direct Ledger Search</h3>
+              <p style="font-size:12px; color:var(--text-muted); font-weight:600;">Search or view certificates instantly in read-only mode.</p>
+            </div>
+            
+            <div style="padding: 16px 20px;">
+              <input type="text" id="sup-search" class="form-input" placeholder="Type manufacturer name or verification clearance ID...">
+            </div>
+
+            <div class="table-wrapper">
+              <table class="lisa-table">
+                <thead>
+                  <tr>
+                    <th>QCV ID</th>
+                    <th>Manufacturer</th>
+                    <th>Product clearance</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Auditing</th>
+                  </tr>
+                </thead>
+                <tbody id="sup-search-tbody">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- QR scanner simulator panel -->
+          <div class="ledger-card" style="padding: 20px;">
+            <div class="analytics-card-header" style="padding:0; border:none; margin-bottom:16px;">
+              <h3>Customs QR Simulator</h3>
+            </div>
+            
+            <div class="scanner-box">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--lisa-gold)" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <path d="M7 12h10M12 7v10"></path>
+              </svg>
+              <div style="text-align: center;">
+                <div style="font-weight: 700; color: var(--lisa-green); font-size:14.5px;">Simulate Gateway Audit Scan</div>
+                <p style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Select standard test scenarios to simulate port audit operations.</p>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+                <button class="scanner-simulate-btn" onclick="simulateScan('VER-QCV-89102-LR')">Scan Cement (VALID)</button>
+                <button class="scanner-simulate-btn" style="background-color:#EF4444;" onclick="simulateScan('VER-QCV-09318-LR')">Scan Palm Oil (REVOKED)</button>
+                <button class="scanner-simulate-btn" style="background-color:#6B7280;" onclick="simulateScan('VER-QCV-44120-LR')">Scan LAC Rubber (EXPIRED)</button>
+              </div>
+            </div>
+
+            <!-- Manual scan key input -->
+            <div style="margin-top: 16px;">
+              <label class="form-label" for="manual-verification-code">Manual Verification ID</label>
+              <div style="display:flex; gap:8px;">
+                <input type="text" id="manual-verification-code" class="form-input" style="padding: 6px 12px; font-size: 13px;" placeholder="VER-QCV-XXXXX-LR">
+                <button class="btn-primary" style="padding: 6px 14px; font-size:13px;" onclick="manualVerification()">Verify</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Slide drawer for supervisor views -->
+  <div class="preview-drawer" id="sup-drawer">
+    <div class="drawer-header">
+      <div class="drawer-title" id="sup-drawer-title">Auditor View</div>
+      <button class="btn-close-drawer" onclick="closeSupDrawer()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <!-- Info list -->
+      <ul class="drawer-meta-list" style="width: 100%;">
+        <li class="drawer-meta-item">
+          <span class="drawer-meta-label">Manufacturer</span>
+          <span class="drawer-meta-value" id="sup-drawer-manufacturer">Manufacturer Name</span>
+        </li>
+        <li class="drawer-meta-item">
+          <span class="drawer-meta-label">Product Name</span>
+          <span class="drawer-meta-value" id="sup-drawer-product">Product Clearance</span>
+        </li>
+        <li class="drawer-meta-item">
+          <span class="drawer-meta-label">Status Badge</span>
+          <span class="status-badge" id="sup-drawer-status-badge">VALID</span>
+        </li>
+        <li class="drawer-meta-item">
+          <span class="drawer-meta-label">Origin Location</span>
+          <span class="drawer-meta-value" id="sup-drawer-origin">Origin</span>
+        </li>
+        <li class="drawer-meta-item">
+          <span class="drawer-meta-label">Serials Covered</span>
+          <span class="drawer-meta-value" id="sup-drawer-serials" style="max-width: 60%; font-size:11.5px;">Serials</span>
+        </li>
+        <li class="drawer-meta-item">
+          <span class="drawer-meta-label">Issue Date</span>
+          <span class="drawer-meta-value" id="sup-drawer-issue">Issue</span>
+        </li>
+        <li class="drawer-meta-item">
+          <span class="drawer-meta-label">Expiry Date</span>
+          <span class="drawer-meta-value" id="sup-drawer-expiry">Expiry</span>
+        </li>
+        <li class="drawer-meta-item">
+          <span class="drawer-meta-label">Standards Cleared</span>
+          <span class="drawer-meta-value" id="sup-drawer-standards" style="max-width: 60%; font-size:11.5px;">Standards</span>
+        </li>
+        <li class="drawer-meta-item">
+          <span class="drawer-meta-label">Surveillance frequency</span>
+          <span class="drawer-meta-value" id="sup-drawer-interval">Interval</span>
+        </li>
+      </ul>
+      
+      <div id="sup-drawer-revocation-warning" style="display:none; width: 100%; border: 1.5px solid var(--status-revoked-text); background-color:rgba(220,38,38,0.05); padding:12px; border-radius:8px; font-size:12.5px; color:var(--status-revoked-text); text-align:left;">
+        <strong>Revocation Alert:</strong> <span id="sup-drawer-revocation-reason">Reason</span>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn-primary" style="width: 100%;" id="sup-drawer-view-btn">Verify Gate Portal</button>
+    </div>
+  </div>
+
+  <!-- State, Navigation, and Supervisor Dashboard scripts -->
+  <script src="state.js"></script>
+  <script src="navigation.js"></script>
+  <script>
+    let certificates = [];
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadSupervisorData();
+      renderStats();
+      renderSearchList();
+
+      document.getElementById("sup-search").addEventListener("input", renderSearchList);
+    });
+
+    async function loadSupervisorData() {
+      try {
+        certificates = await window.lisaState.getCertificatesAsync();
+      } catch (e) {
+        console.warn("Async fetch failed, using local storage cache:", e);
+        certificates = window.lisaState.getCertificates();
+      }
+    }
+
+    function renderStats() {
+      const total = certificates.length;
+      const valid = certificates.filter(c => c.status === 'VALID').length;
+      const revoked = certificates.filter(c => c.status === 'REVOKED').length;
+
+      document.getElementById("sup-stat-total").innerText = total;
+      document.getElementById("sup-stat-valid").innerText = valid;
+      document.getElementById("sup-stat-revoked").innerText = revoked;
+    }
+
+    function renderSearchList() {
+      const tbody = document.getElementById("sup-search-tbody");
+      tbody.innerHTML = "";
+
+      const query = document.getElementById("sup-search").value.toLowerCase().trim();
+
+      const filtered = certificates.filter(c => {
+        return c.id.toLowerCase().includes(query) || 
+               c.manufacturer.toLowerCase().includes(query) || 
+               c.productName.toLowerCase().includes(query) ||
+               c.verificationId.toLowerCase().includes(query);
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">No clearances found matching search parameters.</td></tr>`;
+        return;
+      }
+
+      // Limit search dashboard to top 5 results
+      filtered.slice(0, 5).forEach(c => {
+        const tr = document.createElement("tr");
+        tr.style.cursor = "pointer";
+        tr.onclick = () => openSupDrawer(c);
+
+        tr.innerHTML = `
+          <td><span class="mono-id">${c.id}</span></td>
+          <td style="font-weight: 700; color: var(--lisa-green);">${c.manufacturer}</td>
+          <td style="font-weight: 500;">${c.productName}</td>
+          <td><span class="status-badge ${c.status.toLowerCase()}">${c.status}</span></td>
+          <td style="text-align: right;">
+            <span class="locked-indicator">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              View
+            </span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // QR scan simulator logic
+    async function simulateScan(verificationId) {
+      // Commits the verification scan to local/remote history logs
+      const recentScan = await window.lisaState.addVerificationScanAsync(verificationId);
+
+      // Direct to public verification page automatically in new window to complete visual simulation
+      alert(`Customs QR scan registered. Indexed Scan Ref: [${recentScan ? recentScan.id : 'SCAN-NEW'}]. Opening Gateway Portal...`);
+      window.open(`verify.html?id=${verificationId}`, "_blank");
+      
+      // Reload states
+      await loadSupervisorData();
+      renderStats();
+      renderSearchList();
+    }
+
+    function manualVerification() {
+      const code = document.getElementById("manual-verification-code").value.trim();
+      if (!code) {
+        alert("Please enter a valid verification code.");
+        return;
+      }
+      
+      const cert = window.lisaState.getCertificateById(code);
+      if (!cert) {
+        alert("Verification Clearance not found within the LSA standards registry.");
+        return;
+      }
+
+      simulateScan(cert.verificationId);
+    }
+
+    // Drawer functions
+    function openSupDrawer(cert) {
+      document.getElementById("sup-drawer-title").innerText = `Audit Review ID: ${cert.id}`;
+      document.getElementById("sup-drawer-manufacturer").innerText = cert.manufacturer;
+      document.getElementById("sup-drawer-product").innerText = cert.productName;
+
+      const badge = document.getElementById("sup-drawer-status-badge");
+      badge.className = `status-badge ${cert.status.toLowerCase()}`;
+      badge.innerText = cert.status;
+
+      document.getElementById("sup-drawer-origin").innerText = cert.origin;
+      document.getElementById("sup-drawer-serials").innerText = cert.serialNumbers;
+      document.getElementById("sup-drawer-issue").innerText = cert.issueDate;
+      document.getElementById("sup-drawer-expiry").innerText = cert.expiryDate || 'Continuous';
+      document.getElementById("sup-drawer-standards").innerText = cert.applicableStandards;
+      document.getElementById("sup-drawer-interval").innerText = cert.surveillanceInterval;
+
+      // Revocation warning
+      const warnBox = document.getElementById("sup-drawer-revocation-warning");
+      if (cert.status === 'REVOKED') {
+        warnBox.style.display = "block";
+        document.getElementById("sup-drawer-revocation-reason").innerText = cert.revocationReason;
+      } else {
+        warnBox.style.display = "none";
+      }
+
+      document.getElementById("sup-drawer-view-btn").onclick = () => {
+        window.open(`verify.html?id=${cert.verificationId}`, "_blank");
+      };
+
+      document.getElementById("sup-drawer").classList.add("open");
+    }
+
+    function closeSupDrawer() {
+      document.getElementById("sup-drawer").classList.remove("open");
+    }
+  </script>
+</body>
+</html>

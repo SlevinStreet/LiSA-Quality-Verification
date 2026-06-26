@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verification Logs - LiSA Verification Platform</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar and Topbar injected by navigation.js -->
+    
+    <main class="main-content">
+      <div class="content-body" style="margin-top: 24px;">
+        
+        <!-- Welcome Header -->
+        <div class="analytics-card-header" style="border-bottom:none; margin-bottom: 8px; padding-bottom:0;">
+          <div>
+            <h2 style="font-size: 26px; font-weight: 800;">Scan verification logs</h2>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:2px;">Track and audit real-time standards scans across national custom gateways.</p>
+          </div>
+        </div>
+
+        <!-- Filter controls -->
+        <div class="ledger-card" style="padding: 16px 20px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center;">
+          <input type="text" id="logs-search" class="form-input" style="width: 280px;" placeholder="Search ID, product, or gateway...">
+          
+          <select id="logs-filter-outcome" class="filter-select" style="width:160px;">
+            <option value="ALL">All Outcomes</option>
+            <option value="VALID">VALID Scans</option>
+            <option value="REVOKED">REVOKED Hits</option>
+            <option value="EXPIRED">EXPIRED Flags</option>
+          </select>
+        </div>
+
+        <!-- Logs Table -->
+        <div class="ledger-card">
+          <div class="table-wrapper">
+            <table class="lisa-table" id="logs-table">
+              <thead>
+                <tr>
+                  <th>Scan ID</th>
+                  <th>Clearance ID</th>
+                  <th>Product Clearance</th>
+                  <th>Customs Gateway Location</th>
+                  <th>Inspector Device</th>
+                  <th>Timestamp</th>
+                  <th>Scan Outcome</th>
+                </tr>
+              </thead>
+              <tbody id="logs-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- State, Navigation, and Logs Scripts -->
+  <script src="state.js"></script>
+  <script src="navigation.js"></script>
+  <script>
+    let logs = [];
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadLogsData();
+      renderLogsTable();
+
+      // Search & filters listeners
+      document.getElementById("logs-search").addEventListener("input", renderLogsTable);
+      document.getElementById("logs-filter-outcome").addEventListener("change", renderLogsTable);
+    });
+
+    async function loadLogsData() {
+      try {
+        logs = await window.lisaState.getVerificationLogsAsync();
+      } catch (e) {
+        console.warn("Async fetch failed, using local storage cache:", e);
+        logs = window.lisaState.getVerificationLogs();
+      }
+    }
+
+    function renderLogsTable() {
+      const tbody = document.getElementById("logs-tbody");
+      tbody.innerHTML = "";
+
+      const search = document.getElementById("logs-search").value.toLowerCase().trim();
+      const outcomeFilter = document.getElementById("logs-filter-outcome").value;
+
+      const filtered = logs.filter(log => {
+        const matchSearch = log.id.toLowerCase().includes(search) || 
+                            log.certId.toLowerCase().includes(search) || 
+                            log.verificationId.toLowerCase().includes(search) ||
+                            log.productName.toLowerCase().includes(search) ||
+                            log.location.toLowerCase().includes(search) ||
+                            log.device.toLowerCase().includes(search);
+        
+        const matchOutcome = outcomeFilter === 'ALL' || log.outcome === outcomeFilter;
+        return matchSearch && matchOutcome;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">No scan logs found matching filter parameters.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(log => {
+        const tr = document.createElement("tr");
+        
+        // Dynamic time formatting
+        const date = new Date(log.timestamp);
+        const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        tr.innerHTML = `
+          <td><span class="mono-id" style="background-color:rgba(197, 168, 90, 0.1); border-color:var(--lisa-gold);">${log.id}</span></td>
+          <td><span class="mono-id" style="cursor:pointer;" onclick="window.location.href='verify.html?id=${log.verificationId}'">${log.certId}</span></td>
+          <td style="font-weight: 700; color: var(--lisa-green);">${log.productName}</td>
+          <td style="font-weight: 500;">${log.location}</td>
+          <td style="color:var(--text-muted); font-size:12.5px;">${log.device}</td>
+          <td style="color:var(--text-muted); font-size:12.5px;">${dateStr}</td>
+          <td><span class="status-badge ${log.outcome.toLowerCase()}">${log.outcome}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test Insert</title></head>
+<body>
+  <h1>Test Insert</h1>
+  <div id="status">Running...</div>
+  <pre id="output"></pre>
+  
+  <script src="state.js"></script>
+  <script type="module">
+    async function runTest() {
+      try {
+        const email = 'admin@lisa.gov.lr';
+        const password = 'admin123';
+        document.getElementById('status').innerText = 'Logging in...';
+        await window.lisaState.loginWithPassword(email, password);
+        
+        document.getElementById('status').innerText = 'Inserting...';
+        const certData = {
+          manufacturer: "Test Mfg",
+          productName: "Test Product",
+          origin: "Test Origin",
+          serialNumbers: "123",
+          status: "VALID",
+          issueDate: new Date().toISOString().split("T")[0],
+          applicableStandards: "LSA",
+          regulations: "LSA",
+          scheme: "Scheme",
+          scope: "Scope",
+          surveillanceInterval: "Annually",
+          signatory: "Sig",
+          uploadedFileName: "test.pdf"
+        };
+        
+        const result = await window.lisaState.createCertificateAsync(certData);
+        if (result) {
+          document.getElementById('status').innerText = 'Success!';
+          document.getElementById('output').innerText = JSON.stringify(result, null, 2);
+        } else {
+          document.getElementById('status').innerText = 'Failed. Check console.';
+        }
+      } catch (e) {
+        document.getElementById('status').innerText = 'Error: ' + e.message;
+        document.getElementById('output').innerText = e.stack;
+      }
+    }
+    
+    // Override console.error to capture the exact SDK error
+    const oldError = console.error;
+    console.error = function(...args) {
+      document.getElementById('output').innerText += "\nERROR: " + JSON.stringify(args, null, 2);
+      oldError.apply(console, args);
+    };
+    
+    runTest();
+  </script>
+</body>
+</html>
