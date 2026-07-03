@@ -51,8 +51,12 @@ if (!cfg || typeof cfg !== 'object') {
 
   // Use dynamic import so it works in non-module classic script environments
   import('./insforge-sdk.js').then((sdk) => {
+    let baseUrl = cfg.baseUrl;
+    if (baseUrl && typeof baseUrl === 'string' && baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
     const client = sdk.createClient({
-      baseUrl: cfg.baseUrl,
+      baseUrl: baseUrl,
       anonKey: cfg.anonKey,
       timeout: 5000
     });
