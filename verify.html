@@ -407,10 +407,10 @@
   <!-- InsForge SDK client — loaded as ES module so window.insforgeClient
        is available before state.js runs and before DOMContentLoaded fires. -->
   <!-- Runtime config bridge: loads window.__LISA_CONFIG__ from gitignored config.js -->
-  <script src="config.js"></script>
+  <script type="module" src="config.js"></script>
   <script type="module" src="insforge-client.js"></script>
   <!-- State and Verification Scripts -->
-  <script src="state.js"></script>
+  <script type="module" src="state.js"></script>
   <script>
     // ── Wait for the InsForge ES-module client to initialise ─────────────────
     async function waitForClient(maxMs = 5000) {

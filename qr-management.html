@@ -146,13 +146,13 @@
   <div class="printable-section" id="print-matrix-area" style="display:none;"></div>
 
   <!-- Runtime config bridge: loads window.__LISA_CONFIG__ from gitignored config.js -->
-  <script src="config.js"></script>
+  <script type="module" src="config.js"></script>
   <!-- InsForge SDK client — loaded as ES module so window.insforgeClient
        is available before state.js runs and before DOMContentLoaded fires. -->
   <script type="module" src="insforge-client.js"></script>
   <!-- State, Navigation, and QR Management Scripts -->
-  <script src="state.js"></script>
-  <script src="navigation.js"></script>
+  <script type="module" src="state.js"></script>
+  <script type="module" src="navigation.js"></script>
   <script>
     let certificates = [];
 
