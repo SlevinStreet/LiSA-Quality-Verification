@@ -2,5 +2,8 @@
   "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }

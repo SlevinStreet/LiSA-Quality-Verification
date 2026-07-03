@@ -1,9 +1,55 @@
+/**
+ * LiSA VOC QC Platform — InsForge Client Initialisation
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Reads backend credentials exclusively from window.__LISA_CONFIG__,
+ * which is injected at runtime by config.js (gitignored, never hardcoded here).
+ *
+ * Load order in every HTML page MUST be:
+ *   1. <script src="config.js"></script>           ← sets window.__LISA_CONFIG__
+ *   2. <script type="module" src="insforge-client.js"></script>  ← reads it
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 import { createClient } from './insforge-sdk.js';
 
-const client = createClient({
-  baseUrl: 'https://76vnn7ex.us-east.insforge.app',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDE1NjN9._8uHKHDFujGrwK9stWMBOcETYmK5b9KmWS56LCWbnWI'
-});
+// ── Graceful failure: validate config before attempting to create a client ──
+const cfg = window.__LISA_CONFIG__;
 
-window.insforgeClient = client;
-export default client;
+if (!cfg || typeof cfg !== 'object') {
+  console.error(
+    '[LiSA] Configuration error: window.__LISA_CONFIG__ is not defined.\n' +
+    'Ensure config.js is loaded BEFORE insforge-client.js in your HTML.\n' +
+    'Copy config.example.js → config.js and fill in your backend credentials.'
+  );
+  // Surface a visible warning on the page (non-crashing)
+  document.addEventListener('DOMContentLoaded', () => {
+    const banner = document.createElement('div');
+    banner.style.cssText =
+      'position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;' +
+      'font-family:monospace;font-size:13px;padding:12px 20px;text-align:center;';
+    banner.textContent =
+      '⚠ LiSA Platform: Backend configuration is missing. ' +
+      'Please set up config.js. Contact your system administrator.';
+    document.body.prepend(banner);
+  });
+  // Export a null client so dependent modules don't crash on import
+  window.insforgeClient = null;
+  export default null;
+} else {
+  const missingKeys = ['baseUrl', 'anonKey'].filter(k => !cfg[k] || cfg[k].includes('your-'));
+  if (missingKeys.length > 0) {
+    console.warn(
+      `[LiSA] Configuration warning: The following keys in window.__LISA_CONFIG__ ` +
+      `appear to be placeholders: ${missingKeys.join(', ')}.\n` +
+      `Update config.js with your real InsForge credentials.`
+    );
+  }
+
+  const client = createClient({
+    baseUrl: cfg.baseUrl,
+    anonKey: cfg.anonKey,
+    timeout: 5000
+  });
+
+  window.insforgeClient = client;
+  export default client;
+}

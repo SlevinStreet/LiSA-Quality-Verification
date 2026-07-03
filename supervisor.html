@@ -33,6 +33,43 @@
     .scanner-simulate-btn:hover {
       background-color: var(--lisa-green-hover);
     }
+
+    /* Toast notification */
+    .sup-toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background-color: var(--lisa-green);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 6px 20px rgba(13,63,38,0.3);
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.3s, transform 0.3s;
+      max-width: 360px;
+    }
+    .sup-toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Inline error for manual verify input */
+    .sup-inline-error {
+      color: #ef4444;
+      font-size: 11.5px;
+      font-weight: 600;
+      margin-top: 5px;
+      display: none;
+    }
+    .sup-inline-error.show { display: block; }
+    .sup-input-error {
+      border-color: #ef4444 !important;
+      background-color: #fef2f2 !important;
+    }
   </style>
 </head>
 <body>
@@ -156,9 +193,11 @@
             <div style="margin-top: 16px;">
               <label class="form-label" for="manual-verification-code">Manual Verification ID</label>
               <div style="display:flex; gap:8px;">
-                <input type="text" id="manual-verification-code" class="form-input" style="padding: 6px 12px; font-size: 13px;" placeholder="VER-QCV-XXXXX-LR">
+                <input type="text" id="manual-verification-code" class="form-input" style="padding: 6px 12px; font-size: 13px;" placeholder="VER-QCV-XXXXX-LR"
+                  oninput="document.getElementById('manual-verify-error').classList.remove('show'); this.classList.remove('sup-input-error');">
                 <button class="btn-primary" style="padding: 6px 14px; font-size:13px;" onclick="manualVerification()">Verify</button>
               </div>
+              <div class="sup-inline-error" id="manual-verify-error"></div>
             </div>
           </div>
         </div>
@@ -227,6 +266,11 @@
     </div>
   </div>
 
+  <!-- InsForge SDK client — loaded as ES module so window.insforgeClient
+       is available before state.js runs and before DOMContentLoaded fires. -->
+  <!-- Runtime config bridge: loads window.__LISA_CONFIG__ from gitignored config.js -->
+  <script src="config.js"></script>
+  <script type="module" src="insforge-client.js"></script>
   <!-- State, Navigation, and Supervisor Dashboard scripts -->
   <script src="state.js"></script>
   <script src="navigation.js"></script>
@@ -300,13 +344,27 @@
       });
     }
 
+    // Toast notification helper
+    function showScanToast(message, isError = false) {
+      let toast = document.getElementById('sup-scan-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'sup-scan-toast';
+        toast.className = 'sup-toast';
+        document.body.appendChild(toast);
+      }
+      toast.style.backgroundColor = isError ? '#dc2626' : 'var(--lisa-green)';
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
     // QR scan simulator logic
     async function simulateScan(verificationId) {
       // Commits the verification scan to local/remote history logs
       const recentScan = await window.lisaState.addVerificationScanAsync(verificationId);
 
-      // Direct to public verification page automatically in new window to complete visual simulation
-      alert(`Customs QR scan registered. Indexed Scan Ref: [${recentScan ? recentScan.id : 'SCAN-NEW'}]. Opening Gateway Portal...`);
+      showScanToast(`✓ Scan registered. Ref: [${recentScan ? recentScan.id : 'SCAN-NEW'}]. Opening Gateway Portal…`);
       window.open(`verify.html?id=${verificationId}`, "_blank");
       
       // Reload states
@@ -316,15 +374,26 @@
     }
 
     function manualVerification() {
-      const code = document.getElementById("manual-verification-code").value.trim();
+      const input = document.getElementById("manual-verification-code");
+      const errorEl = document.getElementById('manual-verify-error');
+      const code = input.value.trim();
+
+      // Reset previous errors
+      input.classList.remove('sup-input-error');
+      errorEl.classList.remove('show');
+
       if (!code) {
-        alert("Please enter a valid verification code.");
+        input.classList.add('sup-input-error');
+        errorEl.textContent = 'Please enter a valid verification code.';
+        errorEl.classList.add('show');
         return;
       }
       
       const cert = window.lisaState.getCertificateById(code);
       if (!cert) {
-        alert("Verification Clearance not found within the LSA standards registry.");
+        input.classList.add('sup-input-error');
+        errorEl.textContent = 'Verification Clearance not found within the LSA registry.';
+        errorEl.classList.add('show');
         return;
       }
 

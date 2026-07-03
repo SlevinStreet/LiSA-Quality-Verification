@@ -35,8 +35,15 @@
     }
 
     @keyframes bannerSlideIn {
-      from { opacity: 0; transform: translateY(-6px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .inline-error {
@@ -83,8 +90,7 @@
         <!-- Email -->
         <div class="form-group">
           <label for="login-email">Authorized Email Address</label>
-          <input type="email" id="login-email" class="input-control" placeholder="Email Address"
-            autocomplete="email">
+          <input type="email" id="login-email" class="input-control" placeholder="Email Address" autocomplete="email">
           <div class="inline-error" id="error-login-email"></div>
         </div>
 
@@ -107,6 +113,11 @@
     </div>
   </div>
 
+  <!-- InsForge SDK client — loaded as ES module so window.insforgeClient
+       is available before state.js runs and before DOMContentLoaded fires. -->
+  <!-- Runtime config bridge: loads window.__LISA_CONFIG__ from gitignored config.js -->
+  <script src="config.js"></script>
+  <script type="module" src="insforge-client.js"></script>
   <!-- State Coordination scripts -->
   <script src="state.js"></script>
   <script src="navigation.js"></script>
@@ -135,7 +146,7 @@
 
     function showGlobalError(message) {
       const banner = document.getElementById('global-error-banner');
-      const text   = document.getElementById('global-error-text');
+      const text = document.getElementById('global-error-text');
       if (banner && text) {
         text.textContent = message;
         banner.classList.add('show');
@@ -148,7 +159,7 @@
     }
 
     // ── Real-time (blur) inline validation ─────────────────────────
-    const emailInput    = document.getElementById('login-email');
+    const emailInput = document.getElementById('login-email');
     const passwordInput = document.getElementById('login-password');
 
     emailInput.addEventListener('blur', () => {
@@ -188,7 +199,7 @@
       e.preventDefault();
       hideGlobalError();
 
-      const email    = emailInput.value.trim();
+      const email = emailInput.value.trim();
       const password = passwordInput.value;
 
       // Inline validation before submitting
@@ -230,7 +241,7 @@
       } catch (err) {
         const msg = err?.message || '';
         // Map common error messages to user-friendly ones
-        let friendlyMsg = 'Incorrect email or password. Please try again.';
+        let friendlyMsg = 'Incorrect user email or password. Please try again.';
         if (msg.toLowerCase().includes('too many') || msg.toLowerCase().includes('rate limit')) {
           friendlyMsg = 'Too many failed attempts. Please try again later.';
         } else if (msg.toLowerCase().includes('network') || msg.toLowerCase().includes('fetch')) {
@@ -243,18 +254,6 @@
         submitBtn.querySelector('span').textContent = 'Authorize and Enter';
       }
     });
-
-    // Forgot password flow
-    const forgotLink = document.getElementById('lisa-forgot-password');
-    if (forgotLink) {
-      forgotLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        const email = prompt('Enter your authorized LSA email address to request a security key reset:');
-        if (email) {
-          alert(`A cryptographically secure password reset request has been dispatched to ${email}. Please check your official agency inbox.`);
-        }
-      });
-    }
   </script>
 </body>
 

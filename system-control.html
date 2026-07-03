@@ -93,6 +93,27 @@
       color: #6EE7B7; /* Green tint */
       word-break: break-all;
     }
+
+    /* System control toast */
+    .sys-toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background-color: var(--lisa-green);
+      color: #fff;
+      padding: 14px 22px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 6px 20px rgba(13,63,38,0.3);
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.3s, transform 0.3s;
+      max-width: 400px;
+      line-height: 1.5;
+    }
+    .sys-toast.show { opacity: 1; transform: translateY(0); }
   </style>
 </head>
 <body>
@@ -193,11 +214,30 @@
     </main>
   </div>
 
+  <!-- InsForge SDK client — loaded as ES module so window.insforgeClient
+       is available before state.js runs and before DOMContentLoaded fires. -->
+  <!-- Runtime config bridge: loads window.__LISA_CONFIG__ from gitignored config.js -->
+  <script src="config.js"></script>
+  <script type="module" src="insforge-client.js"></script>
   <!-- State, Navigation, and Control scripts -->
   <script src="state.js"></script>
   <script src="navigation.js"></script>
   <script>
     let currentPermissions = {};
+
+    function showSysToast(message, isError = false) {
+      let toast = document.getElementById('sys-toast-el');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'sys-toast-el';
+        toast.className = 'sys-toast';
+        document.body.appendChild(toast);
+      }
+      toast.style.backgroundColor = isError ? '#dc2626' : 'var(--lisa-green)';
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
 
     document.addEventListener("DOMContentLoaded", async () => {
       await loadControlPanelData();
@@ -250,7 +290,7 @@
       });
 
       await window.lisaState.savePermissionsAsync(updated);
-      alert("System security privilege changes committed and propagated to inspector routes.");
+      showSysToast('✓ Security privilege changes committed and propagated to inspector routes.');
       await loadControlPanelData();
       renderPermissionsMatrix();
       renderSystemAuditLedger();
@@ -283,7 +323,7 @@
         const adminUser = session ? session.email : "super-admin@lisa.gov.lr";
         await window.lisaState.addSystemLogAsync(adminUser, "INSPECTOR_PROFILE_CREATION", `Authorized email ${email} under ${role.toUpperCase()} credentials.`);
 
-        alert(`✅ Inspector account created for ${email} with role: ${role.toUpperCase()}.\nThey can now log in using the provided credentials.`);
+        showSysToast(`✓ Inspector account created for ${email}\nRole: ${role.toUpperCase()} — they can now log in.`);
         document.getElementById("add-user-form").reset();
         renderSystemAuditLedger();
       } catch (err) {

@@ -1,23 +1,49 @@
+/**
+ * LiSA VOC QC Platform — Development Test Script (ESM / Node.js)
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠  This script is for LOCAL DEVELOPMENT TESTING ONLY.
+ *    Credentials are loaded from .env (gitignored) via dotenv.
+ *    NEVER hardcode credentials in this file.
+ *
+ * Setup:
+ *   1. Ensure .env exists with all required variables set.
+ *   2. Run: node --env-file=.env test-insert2.mjs
+ *      Or:  npx dotenv-cli node test-insert2.mjs
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://76vnn7ex.us-east.insforge.app';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDE1NjN9._8uHKHDFujGrwK9stWMBOcETYmK5b9KmWS56LCWbnWI';
+// Read all credentials from environment — never hardcoded here
+const supabaseUrl = process.env.INSFORGE_BASE_URL;
+const supabaseKey = process.env.INSFORGE_ANON_KEY;
+const email = process.env.TEST_ADMIN_EMAIL;
+const password = process.env.TEST_ADMIN_PASSWORD;
+
+if (!supabaseUrl || !supabaseKey || !email || !password) {
+  console.error(
+    '[LiSA Test] ERROR: The following .env variables are required:\n' +
+    '  INSFORGE_BASE_URL, INSFORGE_ANON_KEY, TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD\n' +
+    'Copy .env.example → .env and fill in the real values.'
+  );
+  process.exit(1);
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function testInsert() {
-  console.log("Logging in...");
+  console.log("Logging in as:", email);
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email: 'admin@lisa.gov.lr',
-    password: 'admin123'
+    email,
+    password
   });
 
   if (authError) {
     console.error("Auth error:", authError);
     return;
   }
-  
+
   console.log("Logged in user:", authData.user.id);
-  
+
   const payload = {
     qcv_id: "QCV-TEST-NODE-2",
     verification_id: "VER-TEST-NODE-2",

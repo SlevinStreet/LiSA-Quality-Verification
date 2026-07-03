@@ -1,5 +1,16 @@
 
-# InsForge & AI agent skills
+# ─── Sensitive Credentials (NEVER commit these) ─────────────────────────────
+# Environment variable files
+.env
+.env.*
+*.env
+!.env.example
+
+# Runtime config bridge (generated per-environment, contains live credentials)
+config.js
+!config.example.js
+
+# ─── InsForge & AI agent skills ─────────────────────────────────────────────
 .insforge
 .agent
 .agents
@@ -13,3 +24,6 @@
 .roo
 .trae
 .windsurf
+
+# ─── Node & build artefacts ─────────────────────────────────────────────────
+node_modules/

@@ -3,9 +3,9 @@
  * Dynamically renders the administrative sidebar/header and guards routes based on user role.
  */
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // 1. Session & Access Guard
-  let session = window.lisaState.getCurrentSession();
+  let session = await window.lisaState.validateAndRestoreSessionAsync();
   let currentPage = window.location.pathname.split("/").pop() || "index.html";
   if (currentPage === "") {
     currentPage = "index.html";
@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Supervisor is strictly forbidden from Admin pages
       const forbiddenPages = ["dashboard.html", "create-qcv.html", "system-control.html"];
       if (forbiddenPages.includes(currentPage)) {
-        alert("Access Denied: You do not have administrative clearance to access this panel.");
+        sessionStorage.setItem('lisa_nav_error', "Access Denied: You do not have administrative clearance to access this panel.");
         window.location.href = "supervisor.html";
         return;
       }
@@ -66,6 +66,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 2. Inject Navigation Layout Elements
   injectLayout(session, currentPage);
+
+  // Check and show redirect/auth error toast if present
+  const navError = sessionStorage.getItem('lisa_nav_error');
+  if (navError) {
+    showGlobalNavToast(navError, true);
+    sessionStorage.removeItem('lisa_nav_error');
+  }
 });
 
 function injectLayout(session, currentPage) {
@@ -78,7 +85,9 @@ function injectLayout(session, currentPage) {
   sidebar.className = "sidebar";
   sidebar.id = "lisa-sidebar";
 
-  const initials = session.email.substring(0, 2).toUpperCase();
+  const emailDisplay = session?.email || "unknown@lisa.gov.lr";
+  const roleDisplay = session?.role || "inspector";
+  const initials = emailDisplay.substring(0, 2).toUpperCase();
 
   // Create menu links based on role
   let menuHtml = "";
@@ -152,8 +161,8 @@ function injectLayout(session, currentPage) {
   }
 
   sidebar.innerHTML = `
-    <div class="sidebar-header" style="padding: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); justify-content: center; display: flex;">
-      <img src="logo.jpg" alt="LiSA Logo" style="width: 100%; max-width: 220px; height: auto; border-radius: 8px;">
+    <div class="sidebar-header">
+      <img src="logo.jpg" alt="LiSA Logo" class="sidebar-header-logo">
     </div>
     <ul class="sidebar-menu">
       ${menuHtml}
@@ -162,8 +171,8 @@ function injectLayout(session, currentPage) {
       <div class="sidebar-profile">
         <div class="profile-avatar">${initials}</div>
         <div class="profile-details">
-          <div class="profile-name">${session.email}</div>
-          <div class="profile-role">${session.role}</div>
+          <div class="profile-name">${emailDisplay}</div>
+          <div class="profile-role">${roleDisplay}</div>
         </div>
       </div>
       <button id="lisa-logout-btn" style="
@@ -203,7 +212,7 @@ function injectLayout(session, currentPage) {
         <input type="text" class="header-search-input" id="lisa-global-search" placeholder="Quick search certificate or serial...">
       </div>
       <div class="header-actions">
-        <a href="${session.role === 'supervisor' ? 'supervisor.html' : 'dashboard.html'}" class="header-profile-badge" style="text-decoration: none; cursor: pointer;">${session.role} Portal</a>
+        <a href="${roleDisplay === 'supervisor' ? 'supervisor.html' : 'dashboard.html'}" class="header-profile-badge" style="text-decoration: none; cursor: pointer;">${roleDisplay} Portal</a>
         <button class="header-btn" id="lisa-notifications-btn" title="System Alerts" style="position:relative;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -435,4 +444,46 @@ function injectIconSprite() {
     </svg>
   `;
   document.body.appendChild(sprite);
+}
+
+function showGlobalNavToast(message, isError = false) {
+  // Ensure toast styles are injected
+  if (!document.getElementById('nav-toast-style')) {
+    const styleEl = document.createElement("style");
+    styleEl.id = 'nav-toast-style';
+    styleEl.innerHTML = `
+      .nav-toast {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        background-color: var(--lisa-green);
+        color: #fff;
+        padding: 14px 22px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+        z-index: 99999;
+        opacity: 0;
+        transform: translateY(12px);
+        transition: opacity 0.3s, transform 0.3s;
+        max-width: 400px;
+        line-height: 1.5;
+      }
+      .nav-toast.show { opacity: 1; transform: translateY(0); }
+    `;
+    document.head.appendChild(styleEl);
+  }
+
+  let toast = document.getElementById('nav-toast-el');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'nav-toast-el';
+    toast.className = 'nav-toast';
+    document.body.appendChild(toast);
+  }
+  toast.style.backgroundColor = isError ? '#dc2626' : 'var(--lisa-green)';
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3500);
 }

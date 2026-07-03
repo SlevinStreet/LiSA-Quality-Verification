@@ -109,6 +109,47 @@
       font-size: 11.5px;
       border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
+
+    /* ── Loading Skeleton ───────────────────────────────── */
+    #loading-skeleton-card {
+      min-height: 460px;
+    }
+
+    .skeleton-panel-left {
+      background: linear-gradient(160deg, #0d3f26 0%, #0a3320 100%);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .skeleton-panel-right {
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      background: #fff;
+    }
+
+    .skeleton-block {
+      background: linear-gradient(90deg, #e8ede9 25%, #d2dbd3 50%, #e8ede9 75%);
+      background-size: 300% 100%;
+      animation: shimmer 1.5s ease-in-out infinite;
+      border-radius: 6px;
+    }
+
+    .skeleton-block-light {
+      background: linear-gradient(90deg, rgba(255,255,255,0.12) 25%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.12) 75%);
+      background-size: 300% 100%;
+      animation: shimmer 1.5s ease-in-out infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
   </style>
 </head>
 
@@ -142,6 +183,41 @@
 
   <!-- Main Split columns view -->
   <main class="verify-main-area">
+    <!-- Loading skeleton — visible immediately, replaced once fetch resolves -->
+    <div class="verify-split-card" id="loading-skeleton-card">
+      <div class="skeleton-panel-left">
+        <div class="skeleton-block-light" style="width:150px; height:150px; border-radius:8px;"></div>
+        <div class="skeleton-block-light" style="width:130px; height:34px; border-radius:20px;"></div>
+        <div style="width:100%; display:flex; flex-direction:column; gap:8px; align-items:center;">
+          <div class="skeleton-block-light" style="height:11px; width:88%;"></div>
+          <div class="skeleton-block-light" style="height:11px; width:72%;"></div>
+          <div class="skeleton-block-light" style="height:11px; width:58%;"></div>
+        </div>
+        <div class="skeleton-block-light" style="height:28px; width:82%; border-radius:5px;"></div>
+      </div>
+      <div class="skeleton-panel-right">
+        <div>
+          <div class="skeleton-block" style="height:13px; width:170px; margin-bottom:14px;"></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div class="skeleton-block" style="height:42px;"></div>
+            <div class="skeleton-block" style="height:42px;"></div>
+            <div class="skeleton-block" style="height:42px;"></div>
+            <div class="skeleton-block" style="height:42px;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="skeleton-block" style="height:13px; width:210px; margin-bottom:14px;"></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div class="skeleton-block" style="height:42px;"></div>
+            <div class="skeleton-block" style="height:42px;"></div>
+            <div class="skeleton-block" style="height:42px;"></div>
+            <div class="skeleton-block" style="height:42px;"></div>
+          </div>
+        </div>
+        <div class="skeleton-block" style="height:90px; border-radius:12px;"></div>
+      </div>
+    </div>
+
     <div class="verify-split-card" id="error-fallback-card"
       style="display:none; padding:40px; text-align:center; grid-template-columns: 1fr;">
       <h2 style="color:var(--status-revoked-text); font-size:22px; font-weight:800;">Verification Registry Record Not
@@ -152,7 +228,7 @@
         Gateway Login</button>
     </div>
 
-    <div class="verify-split-card" id="public-portal-split-view">
+    <div class="verify-split-card" id="public-portal-split-view" style="display:none;">
 
       <!-- LEFT COLUMN: Status and dynamic QR badges -->
       <section class="verify-left-panel">
@@ -328,41 +404,108 @@
       Infrastructure. All Rights Reserved.</div>
   </footer>
 
+  <!-- InsForge SDK client — loaded as ES module so window.insforgeClient
+       is available before state.js runs and before DOMContentLoaded fires. -->
+  <!-- Runtime config bridge: loads window.__LISA_CONFIG__ from gitignored config.js -->
+  <script src="config.js"></script>
+  <script type="module" src="insforge-client.js"></script>
   <!-- State and Verification Scripts -->
   <script src="state.js"></script>
   <script>
+    // ── Wait for the InsForge ES-module client to initialise ─────────────────
+    async function waitForClient(maxMs = 5000) {
+      const deadline = Date.now() + maxMs;
+      while (!window.insforgeClient && Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 40));
+      }
+      return window.insforgeClient || null;
+    }
+
     document.addEventListener("DOMContentLoaded", async () => {
-      // Gather verification ID from URL query parameters
       const urlParams = new URLSearchParams(window.location.search);
       const docId = urlParams.get('id');
 
-      if (!docId) {
-        // Render fallback search view
-        document.getElementById("public-portal-split-view").style.display = "none";
-        document.getElementById("error-fallback-card").style.display = "block";
-        return;
+      function showError() {
+        document.getElementById("loading-skeleton-card").style.display = "none";
+        document.getElementById("public-portal-split-view").style.display  = "none";
+        document.getElementById("error-fallback-card").style.display       = "block";
       }
 
-      await window.lisaState.getCertificatesAsync();
+      // No ID in URL → error immediately
+      if (!docId) { showError(); return; }
 
-      // Check state for matching certificate
-      const cert = window.lisaState.getCertificateById(docId);
-      if (!cert) {
-        document.getElementById("public-portal-split-view").style.display = "none";
-        document.getElementById("error-fallback-card").style.display = "block";
-        return;
+      // ── Direct targeted query via InsForge client ─────────────────────────
+      // Uses window.__LISA_CONFIG__ credentials (already injected into the client).
+      // Skips getCertificatesAsync() (full-table load) for a fast single-row fetch.
+      let cert = null;
+      try {
+        const client = await waitForClient();
+        if (!client?.database?.from) throw new Error("InsForge client unavailable");
+
+        // Try verification_id first (canonical public link target), then qcv_id
+        let { data, error } = await client.database
+          .from("certificates")
+          .select("*")
+          .eq("verification_id", docId)
+          .limit(1);
+
+        if ((!data || data.length === 0) && !error) {
+          ({ data, error } = await client.database
+            .from("certificates")
+            .select("*")
+            .eq("qcv_id", docId)
+            .limit(1));
+        }
+
+        if (!error && data && data.length > 0) {
+          const row = data[0];
+          cert = {
+            id:                  row.qcv_id,
+            verificationId:      row.verification_id,
+            manufacturer:        row.manufacturer,
+            productName:         row.product_name,
+            origin:              row.origin,
+            serialNumbers:       row.serial_numbers,
+            status:              row.status,
+            issueDate:           row.issue_date           ? String(row.issue_date).split("T")[0]            : "",
+            expiryDate:          row.expiry_date          ? String(row.expiry_date).split("T")[0]           : "",
+            applicableStandards: row.applicable_standards,
+            regulations:         row.regulations,
+            scheme:              row.scheme,
+            scope:               row.scope,
+            surveillanceInterval:row.surveillance_interval,
+            lastSurveillanceDate:row.last_surveillance_date ? String(row.last_surveillance_date).split("T")[0] : "",
+            signatory:           row.signatory,
+            hash:                row.certificate_hash,
+            qrScans:             row.qr_code_scan_count,
+            revocationReason:    row.revocation_reason,
+            revocationDate:      row.revocation_date      ? String(row.revocation_date).split("T")[0]       : "",
+            uploadedFileName:    row.uploaded_file_name,
+            uploadedFileUrl:     row.uploaded_file_url,
+            uploadedFileKey:     row.uploaded_file_key,
+            createdAt:           row.created_at,
+            updatedAt:           row.updated_at
+          };
+        }
+      } catch (e) {
+        console.warn("[LiSA verify] Direct DB lookup failed:", e);
       }
 
-      // Record the verification scan
-      await window.lisaState.addVerificationScanAsync(cert.id);
+      if (!cert) { showError(); return; }
 
-      // Dynamic QR Generator matching verification gate link URL
-      const baseDir = window.location.href.split('/').slice(0, -1).join('/');
-      const currentGateUrl = baseDir + '/verify.html?id=' + cert.verificationId;
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(currentGateUrl)}`;
+      // Record the verification scan (fire-and-forget)
+      try { await window.lisaState?.addVerificationScanAsync(cert.id); } catch (_) {}
+
+      // ── Reveal portal, hide skeleton ──────────────────────────────────────
+      document.getElementById("loading-skeleton-card").style.display = "none";
+      document.getElementById("public-portal-split-view").style.display = "grid";
+
+      // Canonical QR image — always points to the live GitHub Pages URL
+      const canonicalGateUrl = 'https://slevinstreet.github.io/LiSA-Quality-Verification/verify.html?id=' + cert.verificationId;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(canonicalGateUrl)}`;
       document.getElementById("verify-qr-img").src = qrUrl;
 
-      // Dynamic Header and Left status blocks setup
+      // ── Status badge & legal statement ───────────────────────────────────
       const pill = document.getElementById("verify-status-pill");
       pill.className = `verify-status-badge-lg ${cert.status.toLowerCase()}`;
       pill.innerText = cert.status;
@@ -390,7 +533,7 @@
 
       document.getElementById("verify-verification-id").innerText = cert.verificationId;
 
-      // Audit scan timestamp (rendered in client timezone)
+      // Audit scan timestamp (client local time)
       const now = new Date();
       const dateStr = now.getFullYear() + '-' +
         String(now.getMonth() + 1).padStart(2, '0') + '-' +
@@ -399,33 +542,31 @@
         String(now.getMinutes()).padStart(2, '0');
       document.getElementById("verify-timestamp-val").innerText = dateStr;
 
-      // Populate Right columns data fields
+      // ── Right-panel data fields ───────────────────────────────────────────
       document.getElementById("verify-manufacturer").innerText = cert.manufacturer;
-      document.getElementById("verify-product").innerText = cert.productName;
-      document.getElementById("verify-origin").innerText = cert.origin;
-      document.getElementById("verify-serials").innerText = cert.serialNumbers;
+      document.getElementById("verify-product").innerText      = cert.productName;
+      document.getElementById("verify-origin").innerText       = cert.origin;
+      document.getElementById("verify-serials").innerText      = cert.serialNumbers;
 
-      document.getElementById("verify-standards").innerText = cert.applicableStandards;
+      document.getElementById("verify-standards").innerText   = cert.applicableStandards;
       document.getElementById("verify-regulations").innerText = cert.regulations;
-      document.getElementById("verify-scheme").innerText = cert.scheme;
-      document.getElementById("verify-interval").innerText = cert.surveillanceInterval;
+      document.getElementById("verify-scheme").innerText      = cert.scheme;
+      document.getElementById("verify-interval").innerText    = cert.surveillanceInterval;
 
-      document.getElementById("verify-issue").innerText = cert.issueDate;
+      document.getElementById("verify-issue").innerText  = cert.issueDate;
       document.getElementById("verify-expiry").innerText = cert.expiryDate || 'Continuous Surveillance Clearance';
 
       document.getElementById("verify-declaration-text").innerText =
-        `"This product clearance is officially endorsed under standards compliance scheme verified and signed by ${cert.signatory}."`;
+        `"This product clearance is officially endorsed under standards compliance scheme verified and signed by ${cert.signatory}."` ;
 
       document.getElementById("verify-blockchain-hash").innerHTML =
         `<strong>Cryptographic Ledger Hash:</strong> <span style="color:var(--lisa-gold);">${cert.hash}</span>`;
     });
 
     function goBackToApp() {
-      // If we navigated from within the app, go back to the exact page we came from
       if (document.referrer && document.referrer.includes(window.location.host)) {
         window.history.back();
       } else {
-        // Fallback to registry page
         window.location.href = "registry.html";
       }
     }

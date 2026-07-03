@@ -1,10 +1,25 @@
 /**
  * LiSA VOC-QC Database Setup Script
  * Creates all required tables, indexes, and RLS policies via InsForge REST API
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠  Credentials loaded from .env (gitignored) — NEVER hardcode them here.
+ *
+ * Setup:
+ *   1. Ensure .env exists with INSFORGE_BASE_URL and INSFORGE_API_KEY set.
+ *   2. Run: node --env-file=.env scripts/setup-db.mjs
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
-const BASE_URL = "https://76vnn7ex.us-east.insforge.app";
-const API_KEY = "ik_df6f31172ad76c050f068d4b36a8e903";
+const BASE_URL = process.env.INSFORGE_BASE_URL;
+const API_KEY = process.env.INSFORGE_API_KEY;
+
+if (!BASE_URL || !API_KEY) {
+  console.error(
+    '[LiSA Setup] ERROR: INSFORGE_BASE_URL and INSFORGE_API_KEY must be set in .env\n' +
+    'Copy .env.example → .env and fill in the real values.'
+  );
+  process.exit(1);
+}
 
 const headers = {
   "Content-Type": "application/json",

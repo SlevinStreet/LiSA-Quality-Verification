@@ -1,0 +1,18 @@
+-- ============================================================
+-- DOWN MIGRATION: Rollback for eager-client-loading fix
+-- Applied: 2026-06-30
+-- ============================================================
+-- No database schema changes were made.
+-- The corresponding up change was purely in HTML/JS files:
+--   - Added <script type="module" src="insforge-client.js"> to authenticated pages
+--   - Fixed _restoreAuthSession() token injection in state.js
+--   - Added cookie bridge for multi-tab session sharing
+--
+-- To fully roll back the HTML/JS changes, restore from git:
+--   git checkout HEAD -- index.html dashboard.html create-qcv.html
+--   git checkout HEAD -- registry.html supervisor.html system-control.html
+--   git checkout HEAD -- qr-management.html verification-logs.html state.js
+--
+-- This file exists as a companion rollback record for migration tracking.
+-- ============================================================
+SELECT 'No database schema changes to roll back for 20260630000001.' AS rollback_status;

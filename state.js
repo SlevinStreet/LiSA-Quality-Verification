@@ -80,12 +80,90 @@ class QCVState {
   // --- Session Management ---
   getCurrentSession() {
     const sessionStr = storage.getItem("lisaSession");
-    if (!sessionStr) return null;
-    try {
-      return JSON.parse(sessionStr);
-    } catch (e) {
-      return null;
+    if (sessionStr) {
+      try { return JSON.parse(sessionStr); } catch (e) {}
     }
+    // Multi-tab fallback: read the session cookie written on login.
+    // sessionStorage is tab-scoped; the cookie is shared across tabs
+    // in the same browser session (no max-age → expires on browser close).
+    try {
+      const match = document.cookie.match(/(?:^|;\s*)lisa_tab_token=([^;]*)/);
+      if (match) {
+        const token = decodeURIComponent(match[1]);
+        // Minimal session so _restoreAuthSession can inject the JWT;
+        // role/email are unknown here — pages that need them should
+        // redirect to login when getCurrentSession() returns null from storage.
+        return { token, role: null, email: null, _fromCookie: true };
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  async validateAndRestoreSessionAsync() {
+    const session = this.getCurrentSession();
+    // If we have a session but it's only a cookie token, we need to fetch user info and role
+    if (session && session._fromCookie) {
+      try {
+        const client = await this.getInsforgeClient();
+        if (!client?.auth?.getCurrentUser) {
+          throw new Error("InsForge auth client getCurrentUser is unavailable");
+        }
+        
+        // Fast timeout wrapper
+        const withTimeout = (promise, ms) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms))
+          ]);
+        };
+
+        // Fetch current user from auth server (max 3 seconds)
+        const { data, error } = await withTimeout(client.auth.getCurrentUser(), 3000);
+        if (error || !data?.user) {
+          throw error || new Error("Failed to retrieve user from token");
+        }
+        
+        const user = data.user;
+        const email = user.email;
+        let role = this.getRoleFromEmail(email);
+        
+        // Query users table for role (max 2 seconds)
+        try {
+          if (client?.database?.from) {
+            const { data: userData, error: userError } = await withTimeout(
+              client.database
+                .from("users")
+                .select("role")
+                .eq("id", user.id)
+                .limit(1),
+              2000
+            );
+            if (!userError && userData && userData.length > 0 && userData[0].role) {
+              role = userData[0].role;
+            }
+          }
+        } catch (e) {
+          console.warn("Could not fetch role from DB during verification:", e);
+        }
+        
+        const fullSession = {
+          email,
+          role,
+          loginTime: new Date().toISOString(),
+          token: session.token,
+          user: user
+        };
+        
+        storage.setItem("lisaSession", JSON.stringify(fullSession));
+        return fullSession;
+      } catch (err) {
+        console.warn("Cookie session validation failed:", err);
+        // Clear invalid session cookie
+        this.logout();
+        return null;
+      }
+    }
+    return session;
   }
 
   login(email, role) {
@@ -108,45 +186,81 @@ class QCVState {
   }
 
   async loginWithPassword(email, password) {
+    // insforge-client.js is loaded eagerly as <script type="module"> on all
+    // authenticated pages. Guard kept only as a safety net for unusual load orders.
     if (!window.insforgeClient) {
-      await import("./insforge-client.js");
+      throw new Error("InsForge client not loaded. Ensure insforge-client.js is included as a module script.");
     }
 
-    const role = this.getRoleFromEmail(email);
-    let session = null;
-
-    if (window.insforgeClient?.auth?.signInWithPassword) {
-      const { data, error } = await window.insforgeClient.auth.signInWithPassword({ email, password });
-      if (error) {
-        throw error;
-      }
-      // InsForge SDK returns {accessToken, refreshToken, user} directly on data (not nested in session)
-      session = {
-        email,
-        role,
-        loginTime: new Date().toISOString(),
-        token: data?.accessToken ?? null,
-        refreshToken: data?.refreshToken ?? null,
-        user: data?.user ?? null
-      };
-    } else {
-      session = {
+    if (!window.insforgeClient?.auth?.signInWithPassword) {
+      // Fallback for environments where SDK auth is unavailable
+      const role = this.getRoleFromEmail(email);
+      const session = {
         email,
         role,
         loginTime: new Date().toISOString(),
         token: "LSA-SESSION-" + Math.random().toString(36).substr(2, 9).toUpperCase()
       };
+      storage.setItem("lisaSession", JSON.stringify(session));
+      this.addSystemLog(email, "USER_LOGIN", `Authenticated as ${role.toUpperCase()} role.`);
+      return session;
     }
 
+    const { data, error } = await window.insforgeClient.auth.signInWithPassword({ email, password });
+    if (error) {
+      throw error;
+    }
+
+    // Inject the access token so the subsequent DB query runs as the authenticated user
+    if (data?.accessToken && window.insforgeClient?.setAccessToken) {
+      window.insforgeClient.setAccessToken(data.accessToken);
+    }
+
+    // Fetch the actual role from public.users — this is the source of truth.
+    // getRoleFromEmail() is only a fallback in case the DB query fails.
+    let role = this.getRoleFromEmail(email);
+    try {
+      if (window.insforgeClient?.database?.from) {
+        const { data: userData, error: userError } = await window.insforgeClient.database
+          .from("users")
+          .select("role")
+          .eq("id", data?.user?.id)
+          .limit(1);
+        if (!userError && userData && userData.length > 0 && userData[0].role) {
+          role = userData[0].role;
+        }
+      }
+    } catch (e) {
+      console.warn("Could not fetch role from DB, falling back to email-derived role:", e);
+    }
+
+    const session = {
+      email,
+      role,
+      loginTime: new Date().toISOString(),
+      token: data?.accessToken ?? null,
+      refreshToken: data?.refreshToken ?? null,
+      user: data?.user ?? null
+    };
+
     storage.setItem("lisaSession", JSON.stringify(session));
+
+    // Write a tab-shared cookie so other tabs can restore the JWT without re-login.
+    // No max-age → cookie expires when the browser session ends (same boundary as sessionStorage).
+    // SameSite=Strict prevents CSRF. Not HttpOnly because JS must read it for the fallback.
+    if (session.token) {
+      try {
+        const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = `lisa_tab_token=${encodeURIComponent(session.token)}; path=/; SameSite=Strict${secure}`;
+      } catch (e) {}
+    }
+
     this.addSystemLog(email, "USER_LOGIN", `Authenticated as ${role.toUpperCase()} role.`);
     return session;
   }
 
+
   async loginWithOAuth(provider = "google") {
-    if (!window.insforgeClient) {
-      await import("./insforge-client.js");
-    }
     if (!window.insforgeClient?.auth?.signInWithOAuth) {
       throw new Error("OAuth support is unavailable.");
     }
@@ -157,11 +271,16 @@ class QCVState {
 
   logout() {
     const session = this.getCurrentSession();
-    const email = session ? session.email : "unknown";
+    const email = (session && !session._fromCookie) ? session.email : "unknown";
     if (window.insforgeClient?.auth?.signOut) {
       window.insforgeClient.auth.signOut().catch(() => {});
     }
     storage.removeItem("lisaSession");
+    // Expire the multi-tab cookie so other open tabs lose their JWT
+    try {
+      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `lisa_tab_token=; path=/; max-age=0; SameSite=Strict${secure}`;
+    } catch (e) {}
     this.addSystemLog(email, "USER_LOGOUT", "User logged out of active session.");
     // Clear in-memory state on logout
     this._certificates = [];
@@ -195,31 +314,33 @@ class QCVState {
   }
 
   async getInsforgeClient() {
+    // insforge-client.js is loaded eagerly as <script type="module"> on all
+    // authenticated pages — window.insforgeClient is always set before state.js runs.
     if (!window.insforgeClient) {
-      await import("./insforge-client.js");
+      throw new Error("InsForge client is unavailable. Ensure insforge-client.js is loaded as a module script before state.js.");
     }
-    if (!window.insforgeClient) {
-      throw new Error("InsForge client is unavailable.");
-    }
-    // Restore the auth session from sessionStorage so every DB
-    // call carries the user's JWT and RLS auth.uid() works.
+    // Always re-inject the JWT on every call — setAccessToken is idempotent
+    // and this guarantees the correct token is present even if a new client
+    // instance was created (e.g., page reload, hot module replacement).
     await this._restoreAuthSession(window.insforgeClient);
     return window.insforgeClient;
   }
 
   async _restoreAuthSession(client) {
-    if (this._sessionRestored) return;
-    this._sessionRestored = true;
+    // Token injection is always performed — it is idempotent and cheap.
+    // The _sessionRestored guard only prevents redundant getCurrentUser network calls.
     const session = this.getCurrentSession();
     if (session?.token && client?.setAccessToken) {
       // Inject the stored JWT into the SDK's HTTP client so every subsequent
       // DB / storage call carries the Authorization: Bearer header.
       client.setAccessToken(session.token);
-      // Also hand the refresh token to the HTTP layer so the SDK can auto-refresh
+      // Provide the refresh token so the SDK can auto-refresh expired JWTs.
       if (session.refreshToken && client?.http?.setRefreshToken) {
         client.http.setRefreshToken(session.refreshToken);
       }
     }
+    if (this._sessionRestored) return; // guard against redundant getCurrentUser network calls only
+    this._sessionRestored = true;
   }
 
   async createCertificateAsync(certData) {
@@ -229,8 +350,22 @@ class QCVState {
         throw new Error("InsForge database client is unavailable.");
       }
 
-      const certId = certData.id || ("QCV-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000));
-      const verId = "VER-QCV-" + Math.floor(10000 + Math.random() * 90000) + "-LR";
+      const random2Letters = () => {
+        let res = "";
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        for (let i = 0; i < 2; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+        return res;
+      };
+      const random5Digits = () => Math.floor(10000 + Math.random() * 90000);
+
+      const certId = certData.id || ("LiSA-QR-" + random2Letters() + "-" + new Date().getFullYear() + "-" + random5Digits());
+      let verId = "";
+      const match = certId.match(/^LiSA-QR-([A-Z0-9]{2}-\d{4}-\d{5})$/i);
+      if (match) {
+        verId = "LiSA-QR-" + match[1].toUpperCase();
+      } else {
+        verId = "LiSA-QR-" + random2Letters() + "-" + new Date().getFullYear() + "-" + random5Digits();
+      }
       let mockHash = "";
       for (let i = 0; i < 64; i++) {
         mockHash += Math.floor(Math.random() * 16).toString(16);
@@ -431,13 +566,32 @@ class QCVState {
   }
 
   getCertificateById(id) {
-    return this._certificates.find(c => c.id === id || c.verificationId === id);
+    if (!id) return undefined;
+    const normalised = String(id).toLowerCase().trim();
+    return this._certificates.find(c =>
+      String(c.id || '').toLowerCase() === normalised ||
+      String(c.verificationId || '').toLowerCase() === normalised
+    );
   }
 
   createCertificate(certData) {
     // Local-only fallback: generates a cert in memory if backend is unavailable
-    const certId = certData.id || ("QCV-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000));
-    const verId = "VER-QCV-" + Math.floor(10000 + Math.random() * 90000) + "-LR";
+    const random2Letters = () => {
+      let res = "";
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      for (let i = 0; i < 2; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+      return res;
+    };
+    const random5Digits = () => Math.floor(10000 + Math.random() * 90000);
+
+    const certId = certData.id || ("LiSA-QR-" + random2Letters() + "-" + new Date().getFullYear() + "-" + random5Digits());
+    let verId = "";
+    const match = certId.match(/^LiSA-QR-([A-Z0-9]{2}-\d{4}-\d{5})$/i);
+    if (match) {
+      verId = "LiSA-QR-" + match[1].toUpperCase();
+    } else {
+      verId = "LiSA-QR-" + random2Letters() + "-" + new Date().getFullYear() + "-" + random5Digits();
+    }
     let mockHash = "";
     for (let i = 0; i < 64; i++) mockHash += Math.floor(Math.random() * 16).toString(16);
 
@@ -523,13 +677,12 @@ class QCVState {
       const client = await this.getInsforgeClient();
       if (!client?.storage?.from) throw new Error("Storage client unavailable");
 
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${certId}-${Date.now()}.${fileExt}`;
-      const filePath = `custom-qrs/${fileName}`;
+      // Fixed deterministic path: custom-qrs/{recordId}.png — upsert overwrites on re-upload
+      const filePath = `custom-qrs/${certId}.png`;
 
       const { data, error } = await client.storage
         .from('qr_codes')
-        .upload(filePath, file, { cacheControl: '3600', upsert: false });
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
 
       if (error) throw error;
 
@@ -539,15 +692,17 @@ class QCVState {
 
       const publicUrl = publicUrlData.publicUrl;
 
-      // Update certificate locally
+      // Update certificate in local memory
       const certIdx = this._certificates.findIndex(c => c.id === certId);
       if (certIdx !== -1) {
         this._certificates[certIdx].uploadedFileUrl = publicUrl;
+        this._certificates[certIdx].uploadedFileKey = filePath;
       }
 
-      // Update remotely
+      // PATCH the database record with both the public URL and the storage key
       await client.database.from("certificates").update({
-        uploaded_file_url: publicUrl
+        uploaded_file_url: publicUrl,
+        uploaded_file_key: filePath
       }).eq("qcv_id", certId);
 
       const session = this.getCurrentSession();

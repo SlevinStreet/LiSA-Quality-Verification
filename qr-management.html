@@ -74,6 +74,26 @@
         width: 100%;
       }
     }
+
+    /* QR page toast */
+    .qr-toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background-color: var(--lisa-green);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 6px 20px rgba(13,63,38,0.3);
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.3s, transform 0.3s;
+      max-width: 360px;
+    }
+    .qr-toast.show { opacity: 1; transform: translateY(0); }
   </style>
 </head>
 <body>
@@ -125,6 +145,11 @@
   <!-- Hidden Print Label Mock Container -->
   <div class="printable-section" id="print-matrix-area" style="display:none;"></div>
 
+  <!-- Runtime config bridge: loads window.__LISA_CONFIG__ from gitignored config.js -->
+  <script src="config.js"></script>
+  <!-- InsForge SDK client — loaded as ES module so window.insforgeClient
+       is available before state.js runs and before DOMContentLoaded fires. -->
+  <script type="module" src="insforge-client.js"></script>
   <!-- State, Navigation, and QR Management Scripts -->
   <script src="state.js"></script>
   <script src="navigation.js"></script>
@@ -170,7 +195,7 @@
         const card = document.createElement("div");
         card.className = "qr-card";
 
-        const verifyUrl = window.location.origin + '/verify.html?id=' + c.verificationId;
+        const verifyUrl = 'https://slevinstreet.github.io/LiSA-Quality-Verification/verify.html?id=' + c.verificationId;
         let qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(verifyUrl)}`;
         if (c.uploadedFileUrl) {
           qrImageUrl = c.uploadedFileUrl;
@@ -212,12 +237,27 @@
       });
     }
 
+    function showQRToast(message, isError = false) {
+      let toast = document.getElementById('qr-toast-el');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'qr-toast-el';
+        toast.className = 'qr-toast';
+        document.body.appendChild(toast);
+      }
+      toast.style.backgroundColor = isError ? '#dc2626' : 'var(--lisa-green)';
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
     function copyQRGateway(verificationId) {
-      const verifyLink = window.location.origin + '/verify.html?id=' + verificationId;
+      const verifyLink = 'https://slevinstreet.github.io/LiSA-Quality-Verification/verify.html?id=' + verificationId;
       navigator.clipboard.writeText(verifyLink).then(() => {
-        alert("Public verification gateway link copied successfully.");
+        showQRToast('✓ Verification gateway link copied to clipboard.');
       }).catch(err => {
         console.error("Failed to copy path: ", err);
+        showQRToast('Failed to copy link.', true);
       });
     }
 
@@ -226,7 +266,7 @@
     }
 
     function downloadQRImage(verificationId) {
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(window.location.origin + '/verify.html?id=' + verificationId)}`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent('https://slevinstreet.github.io/LiSA-Quality-Verification/verify.html?id=' + verificationId)}`;
       
       const a = document.createElement("a");
       a.href = qrUrl;
@@ -241,7 +281,7 @@
       const cert = certificates.find(c => c.id === certId);
       if (!cert) return;
 
-      const verifyUrl = window.location.origin + '/verify.html?id=' + cert.verificationId;
+      const verifyUrl = 'https://slevinstreet.github.io/LiSA-Quality-Verification/verify.html?id=' + cert.verificationId;
       let qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(verifyUrl)}`;
       if (cert.uploadedFileUrl) {
         qrImageUrl = cert.uploadedFileUrl;
@@ -308,10 +348,10 @@
             }
             img.style.opacity = '1';
           }
-          alert("Custom QR uploaded and saved successfully.");
+          showQRToast('✓ Custom QR uploaded and saved successfully.');
         } catch (error) {
           console.error("Upload error", error);
-          alert("Failed to upload custom QR code.");
+          showQRToast('Failed to upload custom QR code.', true);
           const img = document.getElementById('qr-img-' + certId);
           if (img) img.style.opacity = '1';
         }

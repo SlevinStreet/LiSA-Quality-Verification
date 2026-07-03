@@ -6,6 +6,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Certificate Registry - LiSA Verification Platform</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Inline error helper for modals */
+    .modal-inline-error {
+      color: #ef4444;
+      font-size: 11.5px;
+      font-weight: 600;
+      margin-top: 4px;
+      display: none;
+    }
+    .modal-inline-error.show { display: block; }
+    .modal-input-error {
+      border-color: #ef4444 !important;
+      background-color: #fef2f2 !important;
+    }
+    /* Registry toast notification */
+    .reg-toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background-color: var(--lisa-green);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 6px 20px rgba(13,63,38,0.3);
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.3s, transform 0.3s;
+      max-width: 360px;
+    }
+    .reg-toast.show { opacity: 1; transform: translateY(0); }
+  </style>
 </head>
 
 <body>
@@ -182,6 +216,7 @@
             <label class="form-label" for="revoke-reason">Official Revocation Cause</label>
             <textarea id="revoke-reason" class="form-textarea"
               placeholder="Detail the failed laboratory checks or regulations violation..." required></textarea>
+            <div class="modal-inline-error" id="revoke-reason-error"></div>
           </div>
 
           <div class="form-group">
@@ -220,11 +255,13 @@
           <div class="form-group">
             <label class="form-label" for="edit-manufacturer">Manufacturer</label>
             <input type="text" id="edit-manufacturer" class="form-input" required>
+            <div class="modal-inline-error" id="edit-manufacturer-error"></div>
           </div>
 
           <div class="form-group">
             <label class="form-label" for="edit-productName">Product Name</label>
             <input type="text" id="edit-productName" class="form-input" required>
+            <div class="modal-inline-error" id="edit-productName-error"></div>
           </div>
 
           <div class="form-group">
@@ -239,6 +276,7 @@
           <div class="form-group" id="edit-revocation-reason-group" style="display:none;">
             <label class="form-label" for="edit-revocation-reason">Official Revocation Cause</label>
             <textarea id="edit-revocation-reason" class="form-textarea" placeholder="Detail the failed laboratory checks..."></textarea>
+            <div class="modal-inline-error" id="edit-revocation-reason-error"></div>
           </div>
 
           <div class="form-group">
@@ -262,15 +300,18 @@
           </div>
         </form>
       </div>
-      <div class=the certificates table exists
-the verification_logs table exists
-the roles_permissions table has the seeded rows for admin, supervisor, and developer"modal-footer">
+      <div class="modal-footer">
         <button class="btn-secondary" onclick="closeEditModal()">Cancel</button>
         <button class="btn-primary" onclick="submitEdit()">Save Changes</button>
       </div>
     </div>
   </div>
 
+  <!-- InsForge SDK client — loaded as ES module so window.insforgeClient
+       is available before state.js runs and before DOMContentLoaded fires. -->
+  <!-- Runtime config bridge: loads window.__LISA_CONFIG__ from gitignored config.js -->
+  <script src="config.js"></script>
+  <script type="module" src="insforge-client.js"></script>
   <!-- State, Navigation, and Registry Scripts -->
   <script src="state.js"></script>
   <script src="navigation.js"></script>
@@ -354,6 +395,13 @@ the roles_permissions table has the seeded rows for admin, supervisor, and devel
       document.getElementById("btn-close-drawer").addEventListener("click", closeDrawer);
       document.getElementById("drawer-btn-copy").addEventListener("click", copyDrawerVerifyLink);
       document.getElementById("drawer-btn-view").addEventListener("click", viewDrawerCertificate);
+
+      // Check for saved draft message to show as toast
+      const draftMsg = sessionStorage.getItem('lisa_draft_saved');
+      if (draftMsg) {
+        showRegistryToast(draftMsg);
+        sessionStorage.removeItem('lisa_draft_saved');
+      }
     });
 
     async function loadCertificatesData() {
@@ -587,17 +635,41 @@ the roles_permissions table has the seeded rows for admin, supervisor, and devel
       modal.classList.add("active");
     }
 
+    // Toast notification helper
+    function showRegistryToast(message, isError = false) {
+      let toast = document.getElementById('reg-toast-el');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'reg-toast-el';
+        toast.className = 'reg-toast';
+        document.body.appendChild(toast);
+      }
+      toast.style.backgroundColor = isError ? '#dc2626' : 'var(--lisa-green)';
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
     function closeRevocationModal() {
+      document.getElementById('revoke-reason').classList.remove('modal-input-error');
+      document.getElementById('revoke-reason-error').classList.remove('show');
       document.getElementById("revocation-modal").classList.remove("active");
     }
 
     function submitRevocation() {
       const id = document.getElementById("revoke-target-id").value;
-      const reason = document.getElementById("revoke-reason").value.trim();
+      const reasonEl = document.getElementById("revoke-reason");
+      const errorEl = document.getElementById("revoke-reason-error");
+      const reason = reasonEl.value.trim();
       const date = document.getElementById("revoke-date").value;
 
+      reasonEl.classList.remove('modal-input-error');
+      errorEl.classList.remove('show');
+
       if (!reason) {
-        alert("Please provide the legal verification revocation reason.");
+        reasonEl.classList.add('modal-input-error');
+        errorEl.textContent = 'Please provide the legal verification revocation reason.';
+        errorEl.classList.add('show');
         return;
       }
 
@@ -711,9 +783,10 @@ the roles_permissions table has the seeded rows for admin, supervisor, and devel
       const verifyLink = window.location.origin + '/verify.html?id=' + cert.verificationId;
 
       navigator.clipboard.writeText(verifyLink).then(() => {
-        alert("Public verification gateway link copied successfully.");
+        showRegistryToast('✓ Public verification link copied to clipboard.');
       }).catch(err => {
         console.error("Failed to copy path: ", err);
+        showRegistryToast('Failed to copy link.', true);
       });
     }
 
@@ -765,6 +838,13 @@ the roles_permissions table has the seeded rows for admin, supervisor, and devel
     }
 
     function closeEditModal() {
+      // Clear all edit modal errors
+      ['edit-manufacturer', 'edit-productName', 'edit-revocation-reason'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('modal-input-error');
+        const err = document.getElementById(id + '-error');
+        if (err) err.classList.remove('show');
+      });
       document.getElementById("edit-modal").classList.remove("active");
     }
 
@@ -781,6 +861,15 @@ the roles_permissions table has the seeded rows for admin, supervisor, and devel
     function submitEdit() {
       const id = document.getElementById("edit-target-id").value;
       
+      // Clear previous errors
+      ['edit-manufacturer', 'edit-productName'].forEach(fid => {
+        document.getElementById(fid).classList.remove('modal-input-error');
+        document.getElementById(fid + '-error').classList.remove('show');
+      });
+      const revErr = document.getElementById('edit-revocation-reason-error');
+      document.getElementById('edit-revocation-reason').classList.remove('modal-input-error');
+      revErr.classList.remove('show');
+
       const updatedData = {
         manufacturer: document.getElementById("edit-manufacturer").value.trim(),
         productName: document.getElementById("edit-productName").value.trim(),
@@ -791,15 +880,27 @@ the roles_permissions table has the seeded rows for admin, supervisor, and devel
         expiryDate: document.getElementById("edit-expiryDate").value
       };
 
-      if (!updatedData.manufacturer || !updatedData.productName || !updatedData.origin || !updatedData.serialNumbers || !updatedData.applicableStandards) {
-        alert("Please fill in all required fields.");
-        return;
+      let hasError = false;
+      if (!updatedData.manufacturer) {
+        document.getElementById('edit-manufacturer').classList.add('modal-input-error');
+        document.getElementById('edit-manufacturer-error').textContent = 'Manufacturer is required.';
+        document.getElementById('edit-manufacturer-error').classList.add('show');
+        hasError = true;
       }
+      if (!updatedData.productName) {
+        document.getElementById('edit-productName').classList.add('modal-input-error');
+        document.getElementById('edit-productName-error').textContent = 'Product name is required.';
+        document.getElementById('edit-productName-error').classList.add('show');
+        hasError = true;
+      }
+      if (hasError) return;
 
       if (updatedData.status === 'REVOKED') {
         updatedData.revocationReason = document.getElementById("edit-revocation-reason").value.trim();
         if (!updatedData.revocationReason) {
-          alert("Please provide the legal revocation reason.");
+          document.getElementById('edit-revocation-reason').classList.add('modal-input-error');
+          revErr.textContent = 'Please provide the legal revocation reason.';
+          revErr.classList.add('show');
           return;
         }
         updatedData.revocationDate = new Date().toISOString().split("T")[0];
