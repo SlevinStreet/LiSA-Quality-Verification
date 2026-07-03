@@ -504,9 +504,48 @@ a:hover {
   gap: 20px;
 }
 
+.grid-two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sidebar-backdrop.is-active {
+  opacity: 1;
+  visibility: visible;
+}
+
 @media (max-width: 992px) {
   .analytics-grid {
     grid-template-columns: 1fr;
+  }
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: none;
+    z-index: 1000;
+  }
+  .sidebar.open-mobile {
+    transform: translateX(0);
+    box-shadow: 10px 0 30px rgba(13, 63, 38, 0.2);
+  }
+  .main-content {
+    margin-left: 0 !important;
+  }
+  .hamburger-menu-btn {
+    display: block !important;
   }
 }
 
@@ -539,6 +578,7 @@ a:hover {
 /* Tables System */
 .table-wrapper {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   width: 100%;
 }
 
@@ -676,6 +716,7 @@ a:hover {
   position: fixed;
   inset: 0;
   background-color: rgba(13, 63, 38, 0.4);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -830,6 +871,36 @@ a:hover {
 
   .form-group.full-width div[style*="flex: 1"] .form-input:last-child {
     margin-bottom: 0;
+  }
+
+  /* Core responsivness grid, table, header overrides */
+  .lisa-table {
+    min-width: 750px !important;
+  }
+
+  .analytics-card-header,
+  .table-controls-row,
+  .filters-box {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .table-controls-row .form-input,
+  .table-controls-row .filter-select,
+  .table-controls-row button,
+  .filters-box .form-input,
+  .filters-box .filter-select,
+  .filters-box button {
+    width: 100% !important;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .grid-two-col {
+    grid-template-columns: 1fr !important;
   }
 }
 

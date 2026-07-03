@@ -402,6 +402,19 @@
         showRegistryToast(draftMsg);
         sessionStorage.removeItem('lisa_draft_saved');
       }
+
+      // Dismiss modals when clicking on the overlay background (outside the modal card)
+      document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) {
+            if (overlay.id === 'revocation-modal') {
+              closeRevocationModal();
+            } else if (overlay.id === 'edit-modal') {
+              closeEditModal();
+            }
+          }
+        });
+      });
     });
 
     async function loadCertificatesData() {

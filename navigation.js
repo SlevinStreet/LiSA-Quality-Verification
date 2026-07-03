@@ -260,36 +260,47 @@ function injectLayout(session, currentPage) {
 
   const hamburger = document.getElementById("lisa-hamburger");
   const activeSidebar = document.getElementById("lisa-sidebar");
+  
+  // Programmatically create and append the .sidebar-backdrop div to the document body
+  let backdrop = document.getElementById("lisa-sidebar-backdrop");
+  if (!backdrop) {
+    backdrop = document.createElement("div");
+    backdrop.id = "lisa-sidebar-backdrop";
+    backdrop.className = "sidebar-backdrop";
+    document.body.appendChild(backdrop);
+  }
+
   if (hamburger && activeSidebar) {
     hamburger.addEventListener("click", (e) => {
       e.stopPropagation();
-      activeSidebar.classList.toggle("open-mobile");
+      const isActive = activeSidebar.classList.toggle("open-mobile");
+      if (isActive) {
+        backdrop.classList.add("is-active");
+      } else {
+        backdrop.classList.remove("is-active");
+      }
+    });
+
+    // Close sidebar on backdrop click (clicking outside)
+    backdrop.addEventListener("click", () => {
+      activeSidebar.classList.remove("open-mobile");
+      backdrop.classList.remove("is-active");
     });
 
     document.addEventListener("click", (e) => {
       if (activeSidebar.classList.contains("open-mobile")) {
-        if (!activeSidebar.contains(e.target) && e.target !== hamburger) {
+        if (!activeSidebar.contains(e.target) && e.target !== hamburger && e.target !== backdrop) {
           activeSidebar.classList.remove("open-mobile");
+          backdrop.classList.remove("is-active");
         }
       }
     });
   }
 
-  // Add mobile-only dynamic overlay styling
+  // Add mobile-only dynamic overlay styling (removing duplicated sidebar styles now handled in styles.css)
   const style = document.createElement("style");
   style.innerHTML = `
     @media (max-width: 992px) {
-      .sidebar {
-        transform: translateX(-100%);
-        box-shadow: none;
-      }
-      .sidebar.open-mobile {
-        transform: translateX(0);
-        box-shadow: 10px 0 30px rgba(13, 63, 38, 0.2);
-      }
-      .main-content {
-        margin-left: 0 !important;
-      }
       .hamburger-menu-btn {
         display: block !important;
       }
