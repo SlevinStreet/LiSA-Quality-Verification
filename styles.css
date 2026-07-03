@@ -873,9 +873,9 @@ a:hover {
     margin-bottom: 0;
   }
 
-  /* Core responsivness grid, table, header overrides */
+  /* Table-to-Card: disable table layout constraints on mobile */
   .lisa-table {
-    min-width: 750px !important;
+    min-width: unset !important;
   }
 
   .analytics-card-header,
@@ -904,7 +904,113 @@ a:hover {
   }
 }
 
-/* Slide-out Preview Drawer */
+/* ═══════════════════════════════════════════════════════════════
+   Table-to-Card Responsive Transformation  (≤ 768px)
+   Each <tr> becomes a self-contained card. td::before pseudo-
+   elements read data-label attributes to print field names.
+═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Hide the desktop header row entirely */
+  .lisa-table thead,
+  .permission-table thead {
+    display: none;
+  }
+
+  /* Reset the table wrapper — no horizontal scroll needed in card mode */
+  .table-wrapper {
+    overflow-x: visible;
+  }
+
+  /* Make table + tbody plain block flow */
+  .lisa-table,
+  .lisa-table tbody,
+  .permission-table,
+  .permission-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  /* Each <tr> becomes a card */
+  .lisa-table tbody tr,
+  .permission-table tbody tr {
+    display: block;
+    background-color: var(--lisa-white);
+    border: 1px solid var(--lisa-border);
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(13, 63, 38, 0.07);
+    margin-bottom: 14px;
+    padding: 4px 0;
+    overflow: hidden;
+  }
+
+  .lisa-table tbody tr:hover,
+  .permission-table tbody tr:hover {
+    background-color: rgba(13, 63, 38, 0.015);
+  }
+
+  /* Each <td> becomes a label/value flex row */
+  .lisa-table tbody td,
+  .permission-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.045);
+    font-size: 13px;
+    text-align: right;
+    min-height: 42px;
+  }
+
+  .lisa-table tbody td:last-child,
+  .permission-table tbody td:last-child {
+    border-bottom: none;
+  }
+
+  /* Field label injected from data-label attribute */
+  .lisa-table tbody td::before,
+  .permission-table tbody td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    margin-right: 12px;
+    text-align: left;
+  }
+
+  /* First cell = card header / primary identifier */
+  .lisa-table tbody td:first-child,
+  .permission-table tbody td:first-child {
+    font-weight: 700;
+    color: var(--lisa-green);
+    font-size: 13.5px;
+    border-bottom: 1px dashed var(--lisa-border);
+    padding-bottom: 12px;
+  }
+
+  .lisa-table tbody td:first-child::before,
+  .permission-table tbody td:first-child::before {
+    color: var(--lisa-green);
+    opacity: 0.7;
+  }
+
+  /* Action column — right-align, hide pseudo-label */
+  .lisa-table tbody td.col-actions {
+    justify-content: flex-end;
+  }
+  .lisa-table tbody td.col-actions::before {
+    display: none;
+  }
+
+  /* Hide the checkbox column on mobile */
+  .lisa-table tbody td.col-checkbox {
+    display: none;
+  }
+}
+
+
 .preview-drawer {
   position: fixed;
   top: 0;

@@ -544,13 +544,13 @@
 
         const attachmentIcon = c.uploadedFileName ? `<span title="Document Attached: ${c.uploadedFileName}" style="color:var(--lisa-gold); margin-left:6px; font-size:12px; cursor:pointer;">📎</span>` : "";
         tr.innerHTML = `
-          <td><input type="checkbox" data-id="${c.id}" ${isChecked ? 'checked' : ''} onchange="toggleSelectCert(event, '${c.id}')"></td>
-          <td><span class="mono-id">${c.id}</span>${attachmentIcon}</td>
-          <td style="font-weight: 700; color: var(--lisa-green);">${c.manufacturer}</td>
-          <td style="font-weight: 500;">${c.productName}</td>
-          <td><span class="status-badge ${c.status.toLowerCase()}">${c.status}</span></td>
-          <td style="color: var(--text-muted); font-size:12.5px;">${c.lastSurveillanceDate || 'N/A'}</td>
-          <td>${actionCell}</td>
+          <td class="col-checkbox"><input type="checkbox" data-id="${c.id}" ${isChecked ? 'checked' : ''} onchange="toggleSelectCert(event, '${c.id}')"></td>
+          <td data-label="QCV ID"><span class="mono-id">${c.id}</span>${attachmentIcon}</td>
+          <td data-label="Manufacturer" style="font-weight: 700; color: var(--lisa-green);">${c.manufacturer}</td>
+          <td data-label="Product" style="font-weight: 500;">${c.productName}</td>
+          <td data-label="Status"><span class="status-badge ${c.status.toLowerCase()}">${c.status}</span></td>
+          <td data-label="Last Surveillance" style="color: var(--text-muted); font-size:12.5px;">${c.lastSurveillanceDate || 'N/A'}</td>
+          <td class="col-actions">${actionCell}</td>
         `;
 
         tbody.appendChild(tr);

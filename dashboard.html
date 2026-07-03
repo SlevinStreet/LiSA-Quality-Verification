@@ -204,9 +204,9 @@
       certs.slice(0, 4).forEach(c => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><span class="mono-id">${c.id}</span></td>
-          <td style="font-weight:500;">${c.manufacturer}</td>
-          <td><span class="status-badge ${c.status.toLowerCase()}">${c.status}</span></td>
+          <td data-label="QCV ID"><span class="mono-id">${c.id}</span></td>
+          <td data-label="Manufacturer" style="font-weight:500;">${c.manufacturer}</td>
+          <td data-label="Status"><span class="status-badge ${c.status.toLowerCase()}">${c.status}</span></td>
         `;
         tbody.appendChild(tr);
       });

@@ -265,12 +265,12 @@
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
-          <td style="font-weight: 700; color: var(--lisa-green);">${roleLabels[r]}</td>
-          <td style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="read" ${perms.read ? 'checked' : ''}></td>
-          <td style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="upload" ${perms.upload ? 'checked' : ''}></td>
-          <td style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="revoke" ${perms.revoke ? 'checked' : ''}></td>
-          <td style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="edit" ${perms.edit ? 'checked' : ''}></td>
-          <td style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="system" ${perms.system ? 'checked' : ''}></td>
+          <td data-label="Role" style="font-weight: 700; color: var(--lisa-green);">${roleLabels[r]}</td>
+          <td data-label="Read" style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="read" ${perms.read ? 'checked' : ''}></td>
+          <td data-label="Upload" style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="upload" ${perms.upload ? 'checked' : ''}></td>
+          <td data-label="Revoke" style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="revoke" ${perms.revoke ? 'checked' : ''}></td>
+          <td data-label="Edit" style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="edit" ${perms.edit ? 'checked' : ''}></td>
+          <td data-label="System Setup" style="text-align: center;"><input type="checkbox" class="checkbox-sec" data-role="${r}" data-perm="system" ${perms.system ? 'checked' : ''}></td>
         `;
         tbody.appendChild(tr);
       });
