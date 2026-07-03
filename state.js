@@ -314,10 +314,14 @@ class QCVState {
   }
 
   async getInsforgeClient() {
-    // insforge-client.js is loaded eagerly as <script type="module"> on all
-    // authenticated pages — window.insforgeClient is always set before state.js runs.
+    // Wait up to 5 seconds for dynamic module script initialization
+    let maxWait = 5000;
+    const start = Date.now();
+    while (!window.insforgeClient && Date.now() - start < maxWait) {
+      await new Promise(r => setTimeout(r, 50));
+    }
     if (!window.insforgeClient) {
-      throw new Error("InsForge client is unavailable. Ensure insforge-client.js is loaded as a module script before state.js.");
+      throw new Error("InsForge client is unavailable. Ensure insforge-client.js is loaded before state.js.");
     }
     // Always re-inject the JWT on every call — setAccessToken is idempotent
     // and this guarantees the correct token is present even if a new client

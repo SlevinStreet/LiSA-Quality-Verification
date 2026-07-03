@@ -9,8 +9,6 @@
  *   2. <script type="module" src="insforge-client.js"></script>  ← reads it
  * ─────────────────────────────────────────────────────────────────────────────
  */
-import { createClient } from './insforge-sdk.js';
-
 // ── Graceful failure: validate config before attempting to create a client ──
 const cfg = window.__LISA_CONFIG__;
 
@@ -31,9 +29,8 @@ if (!cfg || typeof cfg !== 'object') {
       'Please set up config.js. Contact your system administrator.';
     document.body.prepend(banner);
   });
-  // Export a null client so dependent modules don't crash on import
+  // Export a null client so dependent modules don't crash
   window.insforgeClient = null;
-  export default null;
 } else {
   const missingKeys = ['baseUrl', 'anonKey'].filter(k => !cfg[k] || cfg[k].includes('your-'));
   if (missingKeys.length > 0) {
@@ -44,12 +41,17 @@ if (!cfg || typeof cfg !== 'object') {
     );
   }
 
-  const client = createClient({
-    baseUrl: cfg.baseUrl,
-    anonKey: cfg.anonKey,
-    timeout: 5000
-  });
+  // Use dynamic import so it works in non-module classic script environments
+  import('./insforge-sdk.js').then((sdk) => {
+    const client = sdk.createClient({
+      baseUrl: cfg.baseUrl,
+      anonKey: cfg.anonKey,
+      timeout: 5000
+    });
 
-  window.insforgeClient = client;
-  export default client;
+    window.insforgeClient = client;
+    window.InsForgeClient = sdk.InsForgeClient;
+  }).catch((err) => {
+    console.error('[LiSA] Failed to load InsForge SDK dynamically:', err);
+  });
 }
