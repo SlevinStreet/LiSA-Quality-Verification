@@ -342,6 +342,7 @@ class QCVState {
       if (session.refreshToken && client?.http?.setRefreshToken) {
         client.http.setRefreshToken(session.refreshToken);
       }
+    }
     if (this._sessionRestored) return; // guard against redundant getCurrentUser network calls only
     this._sessionRestored = true;
   }
