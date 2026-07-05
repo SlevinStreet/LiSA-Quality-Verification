@@ -393,7 +393,6 @@ class QCVState {
         created_by: session?.user?.id || null,
         product_category: certData.productCategory || null,
         approval_workflow_status: certData.approvalWorkflowStatus || 'voc_unit_issued'
-      };d || null
       };
 
       if (!client?.database?.from) {
