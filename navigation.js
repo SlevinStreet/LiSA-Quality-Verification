@@ -163,22 +163,36 @@ function injectLayout(session, currentPage) {
   sidebar.innerHTML = `
     <div class="sidebar-header">
       <img src="logo.jpg" alt="LiSA Logo" class="sidebar-header-logo">
+      <button class="sidebar-toggle-btn" id="sidebar-collapse-btn" title="Toggle sidebar">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
     </div>
+    <p class="sidebar-section-title">MAIN NAVIGATION</p>
     <ul class="sidebar-menu">
       ${menuHtml}
     </ul>
+    <div class="sidebar-promo-card">
+      <h4>🔒 LiSA Secure QCV</h4>
+      <p>All certificate data is end-to-end encrypted and immutably logged.</p>
+      <button class="sidebar-promo-btn" onclick="window.location.href='system-control.html'">View Audit Ledger</button>
+    </div>
+    <div class="sidebar-mini-badge">
+      <div class="profile-avatar" style="width:36px;height:36px;font-size:14px;">${initials}</div>
+    </div>
     <div class="sidebar-footer">
       <div class="sidebar-profile">
         <div class="profile-avatar">${initials}</div>
         <div class="profile-details">
-          <div class="profile-name">${emailDisplay}</div>
-          <div class="profile-role">${roleDisplay}</div>
+          <div class="profile-name" style="color: var(--lisa-green); font-weight:700;">${emailDisplay}</div>
+          <div class="profile-role" style="color: var(--text-muted);">${roleDisplay}</div>
         </div>
       </div>
       <button id="lisa-logout-btn" style="
         width: 100%; margin-top: 12px; padding: 9px 12px; font-size: 13px;
-        background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85);
-        border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;
+        background: rgba(13,63,38,0.06); color: var(--lisa-green);
+        border: 1px solid var(--lisa-border); border-radius: 8px;
         cursor: pointer; display: flex; align-items: center; justify-content: center;
         gap: 8px; font-weight: 600; transition: all 0.2s; font-family: var(--font-sans);
       ">
@@ -241,6 +255,46 @@ function injectLayout(session, currentPage) {
   // 4. Inject SVG Icons Sprite
   injectIconSprite();
 
+  // 4b. Sidebar Collapse Toggle
+  const collapseBtn = document.getElementById("sidebar-collapse-btn");
+  if (collapseBtn && sidebar) {
+    const COLLAPSED_KEY = "lisa_sidebar_collapsed";
+    // Restore collapse state from localStorage
+    if (localStorage.getItem(COLLAPSED_KEY) === "true") {
+      sidebar.classList.add("collapsed");
+    }
+    collapseBtn.addEventListener("click", () => {
+      sidebar.classList.toggle("collapsed");
+      localStorage.setItem(COLLAPSED_KEY, sidebar.classList.contains("collapsed") ? "true" : "false");
+    });
+  }
+
+  // 4c. Inject Mobile Bottom Navigation Bar
+  if (!document.getElementById("lisa-mobile-bottom-nav")) {
+    const navLinks = [
+      { href: "dashboard.html",       icon: `<svg class="mobile-nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`, label: "Home" },
+      { href: "registry.html",        icon: `<svg class="mobile-nav-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`, label: "Registry" },
+      { href: "create-qcv.html",      icon: `<svg class="mobile-nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`, label: "Create" },
+      { href: "verification-logs.html", icon: `<svg class="mobile-nav-icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`, label: "Logs" }
+    ];
+
+    const mobileNav = document.createElement("nav");
+    mobileNav.id = "lisa-mobile-bottom-nav";
+    mobileNav.className = "mobile-bottom-nav";
+    mobileNav.setAttribute("aria-label", "Mobile Navigation");
+
+    navLinks.forEach(link => {
+      const isActive = currentPage === link.href;
+      const item = document.createElement("a");
+      item.href = link.href;
+      item.className = `mobile-nav-item${isActive ? " active" : ""}`;
+      item.innerHTML = `${link.icon}<span class="mobile-nav-label">${link.label}</span>`;
+      mobileNav.appendChild(item);
+    });
+
+    document.body.appendChild(mobileNav);
+  }
+
   // 5. Add Event Listeners for Nav interactions
   const logoutBtn = document.getElementById("lisa-logout-btn");
   logoutBtn.addEventListener("click", () => {
@@ -248,14 +302,14 @@ function injectLayout(session, currentPage) {
     window.location.href = "index.html";
   });
   logoutBtn.addEventListener("mouseenter", () => {
-    logoutBtn.style.background = "rgba(239,68,68,0.15)";
-    logoutBtn.style.borderColor = "rgba(239,68,68,0.4)";
+    logoutBtn.style.background = "rgba(239,68,68,0.08)";
+    logoutBtn.style.borderColor = "rgba(239,68,68,0.35)";
     logoutBtn.style.color = "#ef4444";
   });
   logoutBtn.addEventListener("mouseleave", () => {
-    logoutBtn.style.background = "rgba(255,255,255,0.1)";
-    logoutBtn.style.borderColor = "rgba(255,255,255,0.2)";
-    logoutBtn.style.color = "rgba(255,255,255,0.85)";
+    logoutBtn.style.background = "rgba(13,63,38,0.06)";
+    logoutBtn.style.borderColor = "var(--lisa-border)";
+    logoutBtn.style.color = "var(--lisa-green)";
   });
 
   const hamburger = document.getElementById("lisa-hamburger");

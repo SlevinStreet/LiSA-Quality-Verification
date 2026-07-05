@@ -82,8 +82,8 @@ a:hover {
 /* Sidebar Styling */
 .sidebar {
   width: 260px;
-  background-color: var(--lisa-green);
-  color: var(--text-white);
+  background-color: var(--lisa-white);
+  color: var(--lisa-green);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -91,11 +91,14 @@ a:hover {
   bottom: 0;
   left: 0;
   z-index: 100;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, width 0.3s ease-in-out, background-color 0.3s ease;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  border-right: 1px solid var(--lisa-border);
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
 }
 
 /* Sleek Premium Scrollbar for Sidebar */
@@ -121,7 +124,8 @@ a:hover {
   display: flex;
   justify-content: center;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--lisa-border);
+  position: relative;
 }
 
 .sidebar-header-logo {
@@ -165,6 +169,7 @@ a:hover {
 
 .sidebar-item {
   margin: 4px 12px;
+  transition: all 0.2s ease;
 }
 
 .sidebar-link {
@@ -172,7 +177,7 @@ a:hover {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  color: rgba(255, 255, 255, 0.8);
+  color: #4b5563; /* elegant medium weight text */
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -182,23 +187,24 @@ a:hover {
 .sidebar-link svg {
   width: 18px;
   height: 18px;
-  stroke: rgba(255, 255, 255, 0.8);
+  stroke: #4b5563;
   transition: stroke 0.2s ease;
 }
 
 .sidebar-link:hover, .sidebar-link.active {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--lisa-gold);
+  background-color: rgba(13, 63, 38, 0.05);
+  color: var(--lisa-green);
+  font-weight: 700; /* subtle bold active state */
 }
 
 .sidebar-link:hover svg, .sidebar-link.active svg {
-  stroke: var(--lisa-gold);
+  stroke: var(--lisa-green);
 }
 
 .sidebar-footer {
   padding: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: var(--lisa-green-hover);
+  border-top: 1px solid var(--lisa-border);
+  background-color: #fafbfc;
 }
 
 .sidebar-profile {
@@ -264,6 +270,7 @@ a:hover {
   flex-grow: 1;
   padding: 0 24px 40px 24px;
   min-width: 0;
+  transition: margin-left 0.3s ease-in-out;
 }
 
 .top-header {
@@ -1882,5 +1889,357 @@ a:hover {
   }
   .sidebar-footer {
     padding: 12px;
+  }
+}
+
+/* Mobile responsive padding & headers */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 80px !important; /* safe spacing offset for bottom nav bar */
+  }
+  .mobile-step-header {
+    display: flex !important;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px !important;
+  }
+  .form-steps-container {
+    display: none !important;
+  }
+}
+
+/* --- 4. HS Code Horizontal Segmented Layout --- */
+.hs-code-container {
+  display: flex;
+  border: 1px solid var(--lisa-border);
+  border-radius: 10px;
+  background-color: #f9fafb;
+  overflow: hidden;
+  width: 100%;
+}
+
+.hs-segment {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px;
+  border-right: 1px solid var(--lisa-border);
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.hs-segment:last-child {
+  border-right: none;
+}
+
+.hs-segment-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.hs-input {
+  border: none !important;
+  background: transparent !important;
+  padding: 4px 0 !important;
+  font-size: 13.5px;
+  color: #1f2937;
+  width: 100%;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.hs-segment:focus-within {
+  background-color: var(--lisa-white);
+  box-shadow: inset 0 0 0 2px var(--lisa-green);
+}
+
+@media (max-width: 768px) {
+  .hs-code-container {
+    flex-direction: column;
+  }
+  .hs-segment {
+    border-right: none;
+    border-bottom: 1px solid var(--lisa-border);
+  }
+  .hs-segment:last-child {
+    border-bottom: none;
+  }
+}
+
+/* --- 5. Mobile Bottom Navigation --- */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--lisa-white);
+    border-top: 1px solid var(--lisa-border);
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) 16px;
+    z-index: 999;
+    box-sizing: border-box;
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 8px 12px;
+    border-radius: 20px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 44px;
+  }
+
+  .mobile-nav-item.active {
+    background-color: var(--lisa-green);
+    color: var(--lisa-gold);
+    gap: 8px;
+    max-width: 160px;
+    padding: 8px 16px;
+  }
+
+  .mobile-nav-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    display: none;
+  }
+
+  .mobile-nav-item.active .mobile-nav-label {
+    display: inline;
+    opacity: 1;
+  }
+
+  .mobile-nav-icon {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+  }
+
+  .mobile-nav-logo {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--lisa-border);
+  }
+}
+
+/* --- 6. Compact Mobile Step Header --- */
+.mobile-step-header {
+  display: none;
+  align-items: center;
+  gap: 16px;
+  background-color: #f9fafb;
+  border: 1px solid var(--lisa-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.step-radial-container {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radial-ring {
+  width: 100%;
+  height: 100%;
+}
+
+.ring-bg {
+  stroke: #e2e8f0;
+}
+
+.ring-fill {
+  stroke: var(--lisa-green);
+  transition: stroke-dasharray 0.3s ease;
+}
+
+.radial-text {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--lisa-green);
+}
+
+.step-info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-step-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--lisa-green);
+}
+
+.mobile-step-next {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* --- 7. Collapsible Sidebar Desktop Styles --- */
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 24px;
+  right: 16px;
+  background-color: var(--lisa-white);
+  border: 1px solid var(--lisa-border);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--lisa-green);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+  z-index: 102;
+}
+
+.sidebar-toggle-btn:hover {
+  background-color: var(--lisa-border);
+}
+
+.sidebar-section-title {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin: 16px 24px 8px 24px;
+  letter-spacing: 0.8px;
+  transition: opacity 0.2s;
+}
+
+.sidebar-promo-card {
+  background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+  color: var(--lisa-white);
+  padding: 16px;
+  border-radius: 12px;
+  margin: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);
+  transition: all 0.2s;
+}
+
+.sidebar-promo-card h4 {
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.sidebar-promo-card p {
+  font-size: 11px;
+  opacity: 0.9;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.sidebar-promo-btn {
+  background-color: var(--lisa-white);
+  color: #1e3a8a;
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: background-color 0.2s;
+}
+
+.sidebar-promo-btn:hover {
+  background-color: #f3f4f6;
+}
+
+.sidebar-mini-badge {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  border-top: 1px solid var(--lisa-border);
+}
+
+.sidebar-mini-badge img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--lisa-gold);
+  object-fit: cover;
+}
+
+/* --- 8. Collapsed State Modifier --- */
+@media (min-width: 993px) {
+  .sidebar.collapsed {
+    width: 80px;
+  }
+
+  .sidebar.collapsed ~ .main-content {
+    margin-left: 80px;
+  }
+
+  .sidebar.collapsed .sidebar-header-logo {
+    display: none;
+  }
+
+  .sidebar.collapsed .sidebar-section-title {
+    display: none;
+  }
+
+  .sidebar.collapsed .sidebar-link span {
+    display: none;
+  }
+
+  .sidebar.collapsed .sidebar-link {
+    justify-content: center;
+    padding: 12px;
+    margin: 4px auto;
+    width: 48px;
+  }
+
+  .sidebar.collapsed .sidebar-promo-card {
+    display: none;
+  }
+
+  .sidebar.collapsed .sidebar-footer {
+    display: none;
+  }
+
+  .sidebar.collapsed .sidebar-mini-badge {
+    display: flex;
+  }
+
+  .sidebar.collapsed .sidebar-toggle-btn svg {
+    transform: rotate(180deg);
   }
 }

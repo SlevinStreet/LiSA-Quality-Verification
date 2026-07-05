@@ -342,7 +342,6 @@ class QCVState {
       if (session.refreshToken && client?.http?.setRefreshToken) {
         client.http.setRefreshToken(session.refreshToken);
       }
-    }
     if (this._sessionRestored) return; // guard against redundant getCurrentUser network calls only
     this._sessionRestored = true;
   }
@@ -354,22 +353,12 @@ class QCVState {
         throw new Error("InsForge database client is unavailable.");
       }
 
-      const random2Letters = () => {
-        let res = "";
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        for (let i = 0; i < 2; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
-        return res;
-      };
-      const random5Digits = () => Math.floor(10000 + Math.random() * 90000);
-
-      const certId = certData.id || ("LiSA-QR-" + random2Letters() + "-" + new Date().getFullYear() + "-" + random5Digits());
-      let verId = "";
-      const match = certId.match(/^LiSA-QR-([A-Z0-9]{2}-\d{4}-\d{5})$/i);
-      if (match) {
-        verId = "LiSA-QR-" + match[1].toUpperCase();
-      } else {
-        verId = "LiSA-QR-" + random2Letters() + "-" + new Date().getFullYear() + "-" + random5Digits();
-      }
+      const certId = certData.id || this.generateCertId(
+        certData.productCategory || "SP",
+        certData.issueDate || new Date().toISOString().split("T")[0],
+        Math.floor(100000 + Math.random() * 900000)
+      );
+      const verId = certId;
       let mockHash = "";
       for (let i = 0; i < 64; i++) {
         mockHash += Math.floor(Math.random() * 16).toString(16);
@@ -382,7 +371,7 @@ class QCVState {
         manufacturer: certData.manufacturer || "Unknown Manufacturer",
         product_name: certData.productName || "Unknown Product",
         origin: certData.origin || "Liberia",
-        serial_numbers: certData.serialNumbers || "N/A",
+        serial_numbers: certData.serial_numbers || "N/A",
         status: certData.status || "VALID",
         issue_date: certData.issueDate || new Date().toISOString().split("T")[0],
         expiry_date: certData.expiryDate || null,
@@ -400,7 +389,10 @@ class QCVState {
         uploaded_file_name: certData.uploadedFileName || null,
         uploaded_file_url: null,
         uploaded_file_key: null,
-        created_by: session?.user?.id || null
+        created_by: session?.user?.id || null,
+        product_category: certData.productCategory || null,
+        approval_workflow_status: certData.approvalWorkflowStatus || 'voc_unit_issued'
+      };d || null
       };
 
       if (!client?.database?.from) {
@@ -580,22 +572,12 @@ class QCVState {
 
   createCertificate(certData) {
     // Local-only fallback: generates a cert in memory if backend is unavailable
-    const random2Letters = () => {
-      let res = "";
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      for (let i = 0; i < 2; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
-      return res;
-    };
-    const random5Digits = () => Math.floor(10000 + Math.random() * 90000);
-
-    const certId = certData.id || ("LiSA-QR-" + random2Letters() + "-" + new Date().getFullYear() + "-" + random5Digits());
-    let verId = "";
-    const match = certId.match(/^LiSA-QR-([A-Z0-9]{2}-\d{4}-\d{5})$/i);
-    if (match) {
-      verId = "LiSA-QR-" + match[1].toUpperCase();
-    } else {
-      verId = "LiSA-QR-" + random2Letters() + "-" + new Date().getFullYear() + "-" + random5Digits();
-    }
+    const certId = certData.id || this.generateCertId(
+      certData.productCategory || "SP",
+      certData.issueDate || new Date().toISOString().split("T")[0],
+      Math.floor(100000 + Math.random() * 900000)
+    );
+    const verId = certId;
     let mockHash = "";
     for (let i = 0; i < 64; i++) mockHash += Math.floor(Math.random() * 16).toString(16);
 
@@ -620,7 +602,9 @@ class QCVState {
       qrScans: 0,
       revocationReason: "",
       revocationDate: "",
-      uploadedFileName: certData.uploadedFileName || ""
+      uploadedFileName: certData.uploadedFileName || "",
+      productCategory: certData.productCategory || null,
+      approvalWorkflowStatus: certData.approvalWorkflowStatus || 'voc_unit_issued'
     };
 
     this._certificates.unshift(newCert);
@@ -971,6 +955,21 @@ class QCVState {
       console.warn("Remote permissions save failed:", error);
       return false;
     }
+  }
+
+  generateCertId(categoryCode, issueDateStr, sequenceNumber) {
+    if (!categoryCode || !issueDateStr) return "";
+    const parts = issueDateStr.split('-');
+    if (parts.length !== 3) return "";
+    const mm = parts[1];
+    const yy = parts[0].substring(2);
+    const seq = String(sequenceNumber).padStart(6, '0');
+    return `LiSA-QC-${categoryCode.toUpperCase()}-${mm}-${yy}-${seq}`;
+  }
+
+  validateCertId(certId) {
+    const pattern = /^LiSA-QC-(SP|BT|IV|CC|SA|SL|BOS)-(0[1-9]|1[0-2])-(\d{2})-(\d{3,6})$/i;
+    return pattern.test(certId);
   }
 }
 

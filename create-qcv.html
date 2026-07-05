@@ -179,6 +179,21 @@
             <div class="form-step-node" id="step-node-4">4</div>
           </div>
 
+          <!-- Mobile Compact Step Header -->
+          <div class="mobile-step-header" style="display: none;">
+            <div class="step-radial-container">
+              <svg class="radial-ring" width="44" height="44" viewBox="0 0 36 36">
+                <circle class="ring-bg" cx="18" cy="18" r="16" fill="none" stroke="#e2e8f0" stroke-width="3"></circle>
+                <circle class="ring-fill" id="mobile-ring-fill" cx="18" cy="18" r="16" fill="none" stroke="var(--lisa-green)" stroke-width="3" stroke-dasharray="25, 100" stroke-dashoffset="0" transform="rotate(-90 18 18)"></circle>
+              </svg>
+              <div class="radial-text" id="mobile-step-badge-text">1/4</div>
+            </div>
+            <div class="step-info-container">
+              <span class="mobile-step-title" id="mobile-step-current-title">Step 1: Compliance File Audit</span>
+              <span class="mobile-step-next" id="mobile-step-next-title">Next: PRODUCT INFORMATION</span>
+            </div>
+          </div>
+
           <form id="qcv-creation-form" onsubmit="event.preventDefault();">
 
             <div id="global-error-banner" class="alert-banner" style="display:none;">
@@ -287,18 +302,32 @@
 
                 <div class="form-group">
                   <label class="form-label" for="qcv-category">Product Category</label>
-                  <input type="text" id="qcv-category" class="form-input" placeholder="Enter Product Category" required>
+                  <select id="qcv-category" class="form-select" required>
+                    <option value="" disabled selected>Select Product Category</option>
+                    <option value="SP">Solar Panels (Modules)</option>
+                    <option value="BT">Solar Batteries</option>
+                    <option value="IV">Solar Inverters</option>
+                    <option value="CC">Solar Charge Controllers</option>
+                    <option value="SA">Solar Powered Appliances</option>
+                    <option value="SL">Solar Lighting Products</option>
+                    <option value="BOS">Solar Balance of System (BOS)</option>
+                  </select>
                 </div>
 
                 <div class="form-group full-width" style="grid-column: span 2;">
-                  <label class="form-label" style="font-weight: 700; color: var(--lisa-green);">HS Code</label>
-                  <div style="display: flex; gap: 16px;">
-                    <div style="flex: 1;">
-                      <label class="form-label" for="qcv-hs-code"
-                        style="font-size: 11px; text-transform: uppercase;">Code</label>
-                      <input type="text" id="qcv-hs-code" class="form-input" placeholder="Enter Code" required>
-                      <input type="date" id="qcv-hs-date" class="form-input" placeholder="Enter Data of Entry" required>
-                      <input type="text" id="qcv-hs-port" class="form-input" placeholder="Enter Port of Entry" required>
+                  <label class="form-label" style="font-weight: 700; color: var(--lisa-green); margin-bottom: 8px;">HS Code</label>
+                  <div class="hs-code-container">
+                    <div class="hs-segment" id="hs-segment-code">
+                      <span class="hs-segment-label">Code</span>
+                      <input type="text" id="qcv-hs-code" class="hs-input" placeholder="Enter Numeric Code" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                    </div>
+                    <div class="hs-segment" id="hs-segment-date">
+                      <span class="hs-segment-label">DE (Date of Entry)</span>
+                      <input type="date" id="qcv-hs-date" class="hs-input" required>
+                    </div>
+                    <div class="hs-segment" id="hs-segment-port">
+                      <span class="hs-segment-label">PE (Port of Entry)</span>
+                      <input type="text" id="qcv-hs-port" class="hs-input" placeholder="Enter Port of Entry" required>
                     </div>
                   </div>
                 </div>
@@ -703,6 +732,25 @@
 
       const stepperLineWidths = ["0%", "33.33%", "66.66%", "100%"];
       document.getElementById("stepper-line").style.width = stepperLineWidths[stepNum - 1];
+
+      // Update Mobile Progress Header
+      const stepDetails = {
+        1: { title: "Compliance File Audit", next: "PRODUCT INFORMATION", percent: 25 },
+        2: { title: "PRODUCT INFORMATION", next: "COMPLIANCE INFORMATION", percent: 50 },
+        3: { title: "COMPLIANCE INFORMATION", next: "Authorizations & Signatories", percent: 75 },
+        4: { title: "Authorizations & Signatories", next: "Submit QCV Ledger", percent: 100 }
+      };
+      const detail = stepDetails[stepNum];
+      if (detail) {
+        const ring = document.getElementById("mobile-ring-fill");
+        if (ring) ring.setAttribute("stroke-dasharray", `${detail.percent}, 100`);
+        const badgeText = document.getElementById("mobile-step-badge-text");
+        if (badgeText) badgeText.innerText = `${stepNum} of 4`;
+        const currentTitle = document.getElementById("mobile-step-current-title");
+        if (currentTitle) currentTitle.innerText = `Step ${stepNum}: ${detail.title}`;
+        const nextTitle = document.getElementById("mobile-step-next-title");
+        if (nextTitle) nextTitle.innerText = `Next: ${detail.next}`;
+      }
     }
 
     // Step Validation
@@ -736,9 +784,8 @@
       });
 
       const certId = document.getElementById("qcv-cert-id").value.trim();
-      const certIdPattern = /^LiSA-QC-[A-Z0-9]{3}-\d{4}-\d{5}$/i;
-      if (certId && !certIdPattern.test(certId)) {
-        showFieldError("qcv-cert-id", "Format must be: LiSA-QC-XXX-YYYY-XXXXX (e.g. LiSA-QC-ABC-2026-12345)");
+      if (certId && !window.lisaState.validateCertId(certId)) {
+        showFieldError("qcv-cert-id", "Format must be: LiSA-QC-[Category]-[MM]-[YY]-[Seq] (e.g. LiSA-QC-SP-01-26-000001)");
         isValid = false;
       }
 
@@ -819,7 +866,9 @@
         signatory: document.getElementById("qcv-signatory").value,
         status: document.getElementById("qcv-status").value,
         uploadedFileName: uploadedFileName,
-        uploadedFileData: uploadedFileData
+        uploadedFileData: uploadedFileData,
+        productCategory: document.getElementById("qcv-category").value,
+        approvalWorkflowStatus: 'voc_unit_issued'
       };
 
       // Show secure cryptographic overlay
@@ -903,6 +952,51 @@
 
       }, 800); // Step 1 duration
     }
+
+    // Auto-generate Certificate ID logic
+    document.addEventListener("DOMContentLoaded", () => {
+      const catSelect = document.getElementById("qcv-category");
+      const dateInput = document.getElementById("qcv-issue-date");
+      const idInput = document.getElementById("qcv-cert-id");
+
+      async function handleAutoGenerateId() {
+        const cat = catSelect.value;
+        // Auto-populate issue date with today's date if empty, so generator works in Step 2
+        if (!dateInput.value) {
+          dateInput.value = new Date().toISOString().split('T')[0];
+        }
+        const dateStr = dateInput.value;
+        if (!cat || !dateStr) return;
+
+        idInput.disabled = true;
+        idInput.placeholder = "Generating ID...";
+        idInput.value = "";
+
+        try {
+          const year = parseInt(dateStr.split('-')[0], 10);
+          const client = await window.lisaState.getInsforgeClient();
+          const { data: seq, error } = await client.database.rpc('get_next_cert_sequence', {
+            p_cat: cat,
+            p_year: year
+          });
+          if (!error && seq) {
+            idInput.value = window.lisaState.generateCertId(cat, dateStr, seq);
+          } else {
+            const fallbackSeq = Math.floor(100000 + Math.random() * 900000);
+            idInput.value = window.lisaState.generateCertId(cat, dateStr, fallbackSeq);
+          }
+        } catch (err) {
+          const fallbackSeq = Math.floor(100000 + Math.random() * 900000);
+          idInput.value = window.lisaState.generateCertId(cat, dateStr, fallbackSeq);
+        } finally {
+          idInput.disabled = false;
+          idInput.placeholder = "e.g. LiSA-QC-SP-01-26-000001";
+        }
+      }
+
+      catSelect.addEventListener("change", handleAutoGenerateId);
+      dateInput.addEventListener("change", handleAutoGenerateId);
+    });
   </script>
 </body>
 
