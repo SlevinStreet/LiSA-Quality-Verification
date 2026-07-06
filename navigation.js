@@ -173,11 +173,7 @@ function injectLayout(session, currentPage) {
     <ul class="sidebar-menu">
       ${menuHtml}
     </ul>
-    <div class="sidebar-promo-card">
-      <h4>🔒 LiSA Secure QCV</h4>
-      <p>All certificate data is end-to-end encrypted and immutably logged.</p>
-      <button class="sidebar-promo-btn" onclick="window.location.href='system-control.html'">View Audit Ledger</button>
-    </div>
+
     <div class="sidebar-mini-badge">
       <div class="profile-avatar" style="width:36px;height:36px;font-size:14px;">${initials}</div>
     </div>
@@ -231,7 +227,7 @@ function injectLayout(session, currentPage) {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path>
           </svg>
-          <span style="position:absolute; top:8px; right:8px; width:8px; height:8px; background-color:var(--lisa-gold); border-radius:50%;"></span>
+          <span id="lisa-notif-dot" style="display:none; position:absolute; top:8px; right:8px; width:8px; height:8px; background-color:var(--lisa-gold); border-radius:50%;"></span>
         </button>
         <!-- Notifications Dropdown Popover -->
         <div id="lisa-notifications-dropdown" class="notifications-dropdown" style="display:none; position:absolute; right:20px; top:70px; width:360px; background:#fff; border:1px solid var(--lisa-border); border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.15); z-index:1000; overflow:hidden; text-align:left;">
@@ -393,6 +389,13 @@ function injectLayout(session, currentPage) {
   const notifBtn = document.getElementById("lisa-notifications-btn");
   const notifDropdown = document.getElementById("lisa-notifications-dropdown");
   
+  // Initialise notification dot based on log count
+  const notifDot = document.getElementById("lisa-notif-dot");
+  const initialLogs = window.lisaState.getSystemLogs() || [];
+  if (notifDot && initialLogs.length > 0) {
+    notifDot.style.display = "block";
+  }
+
   if (notifBtn && notifDropdown) {
     notifBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -438,6 +441,8 @@ function injectLayout(session, currentPage) {
           }
         }
         
+        // Hide the dot once the user opens the dropdown
+        if (notifDot) notifDot.style.display = "none";
         notifDropdown.style.display = "block";
       } else {
         notifDropdown.style.display = "none";

@@ -146,6 +146,36 @@
       border-color: #ef4444 !important;
       background-color: #fef2f2 !important;
     }
+
+    /* ── Step 2: Product Information – Mobile vertical stacking ── */
+    @media (max-width: 768px) {
+      #step-section-2 .form-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px;
+      }
+
+      /* Each field group fills the full width */
+      #step-section-2 .form-grid .form-group,
+      #step-section-2 .form-grid .form-group.full-width {
+        width: 100% !important;
+        grid-column: unset !important;
+      }
+
+      /* HS Code segments stack vertically */
+      #step-section-2 .hs-code-container {
+        flex-direction: column !important;
+      }
+
+      #step-section-2 .hs-segment {
+        border-right: none !important;
+        border-bottom: 1px solid var(--lisa-border);
+      }
+
+      #step-section-2 .hs-segment:last-child {
+        border-bottom: none;
+      }
+    }
   </style>
 </head>
 

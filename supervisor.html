@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,7 +19,7 @@
       align-items: center;
       gap: 16px;
     }
-    
+
     .scanner-simulate-btn {
       background-color: var(--lisa-green);
       color: var(--lisa-white);
@@ -30,6 +31,7 @@
       cursor: pointer;
       transition: background-color 0.2s;
     }
+
     .scanner-simulate-btn:hover {
       background-color: var(--lisa-green-hover);
     }
@@ -45,13 +47,14 @@
       border-radius: 10px;
       font-size: 13px;
       font-weight: 600;
-      box-shadow: 0 6px 20px rgba(13,63,38,0.3);
+      box-shadow: 0 6px 20px rgba(13, 63, 38, 0.3);
       z-index: 9999;
       opacity: 0;
       transform: translateY(12px);
       transition: opacity 0.3s, transform 0.3s;
       max-width: 360px;
     }
+
     .sup-toast.show {
       opacity: 1;
       transform: translateY(0);
@@ -65,30 +68,39 @@
       margin-top: 5px;
       display: none;
     }
-    .sup-inline-error.show { display: block; }
+
+    .sup-inline-error.show {
+      display: block;
+    }
+
     .sup-input-error {
       border-color: #ef4444 !important;
       background-color: #fef2f2 !important;
     }
   </style>
 </head>
+
 <body>
 
   <div class="app-container">
     <!-- Sidebar and Topbar injected by navigation.js -->
-    
+
     <main class="main-content">
       <div class="content-body" style="margin-top: 24px;">
-        
+
         <!-- Welcome Header -->
         <div class="analytics-card-header" style="border-bottom:none; margin-bottom: 8px; padding-bottom:0;">
           <div>
             <h2 style="font-size: 26px; font-weight: 800;">Field Inspector Hub</h2>
-            <p style="color:var(--text-muted); font-size:14px; margin-top:2px;">Field standards auditing overview and digital QR clearance verification terminal.</p>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:2px;">Field standards auditing overview and
+              digital QR clearance verification terminal.</p>
           </div>
           <div>
             <div class="locked-indicator">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
               <span>Field Inspector Clearance</span>
             </div>
           </div>
@@ -101,7 +113,9 @@
             <div class="metric-header">
               <span class="metric-title">Compliance Ledger Size</span>
               <div class="metric-icon-box">
-                <svg><use href="#icon-registry"></use></svg>
+                <svg>
+                  <use href="#icon-registry"></use>
+                </svg>
               </div>
             </div>
             <div class="metric-value" id="sup-stat-total">0</div>
@@ -113,7 +127,9 @@
             <div class="metric-header">
               <span class="metric-title">Active & Verified Clearances</span>
               <div class="metric-icon-box" style="background-color:rgba(16, 185, 129, 0.1);">
-                <svg style="stroke:var(--status-valid-text);"><use href="#icon-security"></use></svg>
+                <svg style="stroke:var(--status-valid-text);">
+                  <use href="#icon-security"></use>
+                </svg>
               </div>
             </div>
             <div class="metric-value" id="sup-stat-valid" style="color:var(--status-valid-text);">0</div>
@@ -125,8 +141,10 @@
             <div class="metric-header">
               <span class="metric-title">Revoked Authority Flags</span>
               <div class="metric-icon-box" style="background-color:rgba(239, 68, 68, 0.1);">
-                <svg style="stroke:var(--status-revoked-text);" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/>
+                <svg style="stroke:var(--status-revoked-text);" width="18" height="18" fill="none" stroke="currentColor"
+                  stroke-width="2" viewBox="0 0 24 24">
+                  <path
+                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01" />
                 </svg>
               </div>
             </div>
@@ -141,11 +159,13 @@
           <div class="ledger-card">
             <div class="analytics-card-header">
               <h3>Direct Ledger Search</h3>
-              <p style="font-size:12px; color:var(--text-muted); font-weight:600;">Search or view certificates instantly in read-only mode.</p>
+              <p style="font-size:12px; color:var(--text-muted); font-weight:600;">Search or view certificates instantly
+                in read-only mode.</p>
             </div>
-            
+
             <div style="padding: 16px 20px;">
-              <input type="text" id="sup-search" class="form-input" placeholder="Type manufacturer name or verification clearance ID...">
+              <input type="text" id="sup-search" class="form-input"
+                placeholder="Type manufacturer name or verification clearance ID...">
             </div>
 
             <div class="table-wrapper">
@@ -166,7 +186,7 @@
             </div>
           </div>
 
-          <!-- QR scanner simulator panel -->
+          <!-- QR scanner simulator panel ->
           <div class="ledger-card" style="padding: 20px;">
             <div class="analytics-card-header" style="padding:0; border:none; margin-bottom:16px;">
               <h3>Customs QR Simulator</h3>
@@ -187,23 +207,25 @@
                 <button class="scanner-simulate-btn" style="background-color:#EF4444;" onclick="simulateScan('VER-QCV-09318-LR')">Scan Palm Oil (REVOKED)</button>
                 <button class="scanner-simulate-btn" style="background-color:#6B7280;" onclick="simulateScan('VER-QCV-44120-LR')">Scan LAC Rubber (EXPIRED)</button>
               </div>
-            </div>
+            </div-->
 
-            <!-- Manual scan key input -->
-            <div style="margin-top: 16px;">
-              <label class="form-label" for="manual-verification-code">Manual Verification ID</label>
-              <div style="display:flex; gap:8px;">
-                <input type="text" id="manual-verification-code" class="form-input" style="padding: 6px 12px; font-size: 13px;" placeholder="VER-QCV-XXXXX-LR"
-                  oninput="document.getElementById('manual-verify-error').classList.remove('show'); this.classList.remove('sup-input-error');">
-                <button class="btn-primary" style="padding: 6px 14px; font-size:13px;" onclick="manualVerification()">Verify</button>
-              </div>
-              <div class="sup-inline-error" id="manual-verify-error"></div>
+          <!-- Manual scan key input -->
+          <div style="margin-top: 16px;">
+            <label class="form-label" for="manual-verification-code">Manual Verification ID</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="manual-verification-code" class="form-input"
+                style="padding: 6px 12px; font-size: 13px;" placeholder="VER-QCV-XXXXX-LR"
+                oninput="document.getElementById('manual-verify-error').classList.remove('show'); this.classList.remove('sup-input-error');">
+              <button class="btn-primary" style="padding: 6px 14px; font-size:13px;"
+                onclick="manualVerification()">Verify</button>
             </div>
+            <div class="sup-inline-error" id="manual-verify-error"></div>
           </div>
         </div>
-
       </div>
-    </main>
+
+  </div>
+  </main>
   </div>
 
   <!-- Slide drawer for supervisor views -->
@@ -212,7 +234,8 @@
       <div class="drawer-title" id="sup-drawer-title">Auditor View</div>
       <button class="btn-close-drawer" onclick="closeSupDrawer()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
       </button>
     </div>
@@ -237,7 +260,8 @@
         </li>
         <li class="drawer-meta-item">
           <span class="drawer-meta-label">Serials Covered</span>
-          <span class="drawer-meta-value" id="sup-drawer-serials" style="max-width: 60%; font-size:11.5px;">Serials</span>
+          <span class="drawer-meta-value" id="sup-drawer-serials"
+            style="max-width: 60%; font-size:11.5px;">Serials</span>
         </li>
         <li class="drawer-meta-item">
           <span class="drawer-meta-label">Issue Date</span>
@@ -249,15 +273,17 @@
         </li>
         <li class="drawer-meta-item">
           <span class="drawer-meta-label">Standards Cleared</span>
-          <span class="drawer-meta-value" id="sup-drawer-standards" style="max-width: 60%; font-size:11.5px;">Standards</span>
+          <span class="drawer-meta-value" id="sup-drawer-standards"
+            style="max-width: 60%; font-size:11.5px;">Standards</span>
         </li>
         <li class="drawer-meta-item">
           <span class="drawer-meta-label">Surveillance frequency</span>
           <span class="drawer-meta-value" id="sup-drawer-interval">Interval</span>
         </li>
       </ul>
-      
-      <div id="sup-drawer-revocation-warning" style="display:none; width: 100%; border: 1.5px solid var(--status-revoked-text); background-color:rgba(220,38,38,0.05); padding:12px; border-radius:8px; font-size:12.5px; color:var(--status-revoked-text); text-align:left;">
+
+      <div id="sup-drawer-revocation-warning"
+        style="display:none; width: 100%; border: 1.5px solid var(--status-revoked-text); background-color:rgba(220,38,38,0.05); padding:12px; border-radius:8px; font-size:12.5px; color:var(--status-revoked-text); text-align:left;">
         <strong>Revocation Alert:</strong> <span id="sup-drawer-revocation-reason">Reason</span>
       </div>
     </div>
@@ -311,10 +337,10 @@
       const query = document.getElementById("sup-search").value.toLowerCase().trim();
 
       const filtered = certificates.filter(c => {
-        return c.id.toLowerCase().includes(query) || 
-               c.manufacturer.toLowerCase().includes(query) || 
-               c.productName.toLowerCase().includes(query) ||
-               c.verificationId.toLowerCase().includes(query);
+        return c.id.toLowerCase().includes(query) ||
+          c.manufacturer.toLowerCase().includes(query) ||
+          c.productName.toLowerCase().includes(query) ||
+          c.verificationId.toLowerCase().includes(query);
       });
 
       if (filtered.length === 0) {
@@ -366,7 +392,7 @@
 
       showScanToast(`✓ Scan registered. Ref: [${recentScan ? recentScan.id : 'SCAN-NEW'}]. Opening Gateway Portal…`);
       window.open(`verify.html?id=${verificationId}`, "_blank");
-      
+
       // Reload states
       await loadSupervisorData();
       renderStats();
@@ -388,7 +414,7 @@
         errorEl.classList.add('show');
         return;
       }
-      
+
       const cert = window.lisaState.getCertificateById(code);
       if (!cert) {
         input.classList.add('sup-input-error');
@@ -438,4 +464,5 @@
     }
   </script>
 </body>
+
 </html>

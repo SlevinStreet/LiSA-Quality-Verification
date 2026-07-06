@@ -43,8 +43,6 @@
                   <th>Scan ID</th>
                   <th>Clearance ID</th>
                   <th>Product Clearance</th>
-                  <th>Customs Gateway Location</th>
-                  <th>Inspector Device</th>
                   <th>Timestamp</th>
                   <th>Scan Outcome</th>
                 </tr>
@@ -100,16 +98,14 @@
         const matchSearch = log.id.toLowerCase().includes(search) || 
                             log.certId.toLowerCase().includes(search) || 
                             log.verificationId.toLowerCase().includes(search) ||
-                            log.productName.toLowerCase().includes(search) ||
-                            log.location.toLowerCase().includes(search) ||
-                            log.device.toLowerCase().includes(search);
+                            log.productName.toLowerCase().includes(search);
         
         const matchOutcome = outcomeFilter === 'ALL' || log.outcome === outcomeFilter;
         return matchSearch && matchOutcome;
       });
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">No scan logs found matching filter parameters.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">No scan logs found matching filter parameters.</td></tr>`;
         return;
       }
 
@@ -131,8 +127,6 @@
           <td data-label="Log ID"><span class="mono-id" style="background-color:rgba(197, 168, 90, 0.1); border-color:var(--lisa-gold);">${log.id}</span></td>
           <td data-label="Cert ID"><span class="mono-id" style="cursor:pointer;" onclick="window.location.href='verify.html?id=${log.verificationId}'">${log.certId}</span></td>
           <td data-label="Product" style="font-weight: 700; color: var(--lisa-green);">${log.productName}</td>
-          <td data-label="Location" style="font-weight: 500;">${log.location}</td>
-          <td data-label="Device" style="color:var(--text-muted); font-size:12.5px;">${log.device}</td>
           <td data-label="Date" style="color:var(--text-muted); font-size:12.5px;">${dateStr}</td>
           <td data-label="Outcome"><span class="status-badge ${log.outcome.toLowerCase()}">${log.outcome}</span></td>
         `;
